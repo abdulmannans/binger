@@ -17,7 +17,15 @@ npm run dev
 
 Open http://localhost:3000, register with the invite code, then search and build lists.
 
-If you later host on Vercel (ephemeral disk), create a free [Turso](https://turso.tech) database and set `DATABASE_URL` + `DATABASE_AUTH_TOKEN`. Same code, just different env vars.
+If you later host on Netlify, do **not** use the SQLite file. Create a free [Turso](https://turso.tech) database and set these in **Site configuration → Environment variables**, then redeploy:
+
+- `DATABASE_URL` — `libsql://....turso.io`
+- `DATABASE_AUTH_TOKEN` — the Turso token (required)
+- `TMDB_API_KEY`
+- `INVITE_CODE`
+- `SESSION_SECRET` — at least 32 characters
+
+`DATABASE_URL` without `DATABASE_AUTH_TOKEN` will fail with a server error on register.
 
 ## Stack
 

@@ -8,7 +8,7 @@ export interface SessionUser {
 }
 
 function sessionPassword() {
-  const secret = useRuntimeConfig().sessionSecret
+  const secret = sessionSecret()
   if (!secret || secret.length < 32) {
     throw createError({
       statusCode: 500,

@@ -38,7 +38,7 @@ async function submit() {
 <template>
   <form class="w-full max-w-sm rounded-2xl border border-line bg-panel/90 p-6 shadow-2xl" @submit.prevent="submit">
     <h1 class="font-display text-4xl">Join the library</h1>
-    <p class="mt-1 text-sm text-mist">Invite code required. Passwords are hashed before they hit the sheet.</p>
+    <p class="mt-1 text-sm text-mist">Invite code required. Passwords are stored as hashes, not plain text.</p>
 
     <label class="mt-6 block text-xs uppercase tracking-wider text-mist">Display name</label>
     <input

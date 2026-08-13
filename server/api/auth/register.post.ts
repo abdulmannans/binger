@@ -13,8 +13,8 @@ export default defineEventHandler(async (event) => {
   const displayName = body.displayName?.trim() || ''
   const inviteCode = body.inviteCode?.trim() || ''
 
-  const config = useRuntimeConfig()
-  if (!config.inviteCode || inviteCode !== config.inviteCode) {
+  const expectedInvite = configuredInviteCode()
+  if (!expectedInvite || inviteCode !== expectedInvite) {
     throw createError({ statusCode: 403, statusMessage: 'Invalid invite code' })
   }
   if (!isValidEmail(email)) {

@@ -46,6 +46,14 @@ export function useAuth() {
 }
 
 export function apiError(error: unknown) {
-  const err = error as { data?: { statusMessage?: string, message?: string }, statusMessage?: string, message?: string }
-  return err?.data?.statusMessage || err?.statusMessage || err?.data?.message || err?.message || 'Something went wrong'
+  const err = error as {
+    data?: { statusMessage?: string, message?: string, statusCode?: number }
+    statusMessage?: string
+    message?: string
+    statusCode?: number
+  }
+  const message = err?.data?.statusMessage || err?.data?.message || err?.statusMessage || err?.message
+  if (message && message !== 'Server Error' && !message.startsWith('FetchError')) return message
+  if (err?.statusCode === 403 || err?.data?.statusCode === 403) return 'Invalid invite code'
+  return message || 'Something went wrong'
 }

@@ -8,12 +8,12 @@ export default defineNuxtConfig({
     plugins: [tailwindcss()],
   },
   runtimeConfig: {
-    databaseUrl: process.env.DATABASE_URL || 'file:data/bingewatcher.db',
-    databaseAuthToken: process.env.DATABASE_AUTH_TOKEN || '',
-    tmdbApiKey: process.env.TMDB_API_KEY || '',
-    omdbApiKey: process.env.OMDB_API_KEY || '',
-    inviteCode: process.env.INVITE_CODE || '',
-    sessionSecret: process.env.SESSION_SECRET || '',
+    databaseUrl: '',
+    databaseAuthToken: '',
+    tmdbApiKey: '',
+    omdbApiKey: '',
+    inviteCode: '',
+    sessionSecret: '',
   },
   app: {
     head: {

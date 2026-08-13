@@ -3,29 +3,54 @@ import { dirname, resolve } from 'node:path'
 import { createClient, type Client } from '@libsql/client'
 import type { MediaType, SheetItem, SheetList, SheetUser, WatchStatus } from '#shared/types'
 
-const DEFAULT_DB_URL = 'file:data/bingewatcher.db'
-
 let client: Client | null = null
 let schemaReady = false
 
-function databaseUrl() {
-  return (useRuntimeConfig().databaseUrl as string) || DEFAULT_DB_URL
-}
-
 function resolveDbUrl(url: string) {
-  if (!url.startsWith('file:')) return url
   const pathPart = url.replace(/^file:(\/\/)?/, '')
   const abs = resolve(pathPart)
   mkdirSync(dirname(abs), { recursive: true })
   return `file:${abs}`
 }
 
+function isRemoteDb(url: string) {
+  return url.startsWith('libsql://') || url.startsWith('https://')
+}
+
+function isServerless() {
+  return Boolean(process.env.NETLIFY || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL)
+}
+
+function dbFailure(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error)
+  throw createError({
+    statusCode: 500,
+    statusMessage: `Database connection failed. On Netlify set DATABASE_URL and DATABASE_AUTH_TOKEN. ${message}`,
+  })
+}
+
 export function db() {
   if (client) return client
-  const url = resolveDbUrl(databaseUrl())
-  const authToken = useRuntimeConfig().databaseAuthToken as string
+  const url = databaseUrl()
+  const authToken = databaseAuthToken()
+
+  if (isServerless() && url.startsWith('file:')) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'Netlify cannot use a local SQLite file. Set DATABASE_URL and DATABASE_AUTH_TOKEN to your Turso database.',
+    })
+  }
+
+  if (isRemoteDb(url) && !authToken) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: 'DATABASE_AUTH_TOKEN is missing. Add the Turso token in your host env vars.',
+    })
+  }
+
+  const resolved = url.startsWith('file:') ? resolveDbUrl(url) : url
   client = createClient({
-    url,
+    url: resolved,
     authToken: authToken || undefined,
   })
   return client
@@ -34,7 +59,8 @@ export function db() {
 export async function ensureSchema() {
   if (schemaReady) return
   const database = db()
-  await database.executeMultiple(`
+  try {
+    await database.executeMultiple(`
     CREATE TABLE IF NOT EXISTS users (
       id TEXT PRIMARY KEY,
       email TEXT NOT NULL UNIQUE,
@@ -69,6 +95,10 @@ export async function ensureSchema() {
     CREATE INDEX IF NOT EXISTS idx_items_list ON items(list_id);
     CREATE INDEX IF NOT EXISTS idx_items_user ON items(user_id);
   `)
+  }
+  catch (error) {
+    dbFailure(error)
+  }
   schemaReady = true
 }
 

@@ -8,7 +8,7 @@ const imdbRatingCache = new Map<string, string | null>()
 const imdbIdCache = new Map<string, string | null>()
 
 function tmdbKey() {
-  const key = useRuntimeConfig().tmdbApiKey
+  const key = tmdbApiKey()
   if (!key) {
     throw createError({ statusCode: 500, statusMessage: 'TMDB_API_KEY is not set' })
   }
@@ -16,7 +16,7 @@ function tmdbKey() {
 }
 
 function omdbKey() {
-  return useRuntimeConfig().omdbApiKey as string
+  return omdbApiKey()
 }
 
 async function tmdb<T>(path: string, query: Record<string, string> = {}) {
