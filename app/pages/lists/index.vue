@@ -46,8 +46,8 @@ async function createList() {
         <h1 class="font-display text-6xl">Your lists</h1>
       </div>
       <div class="flex flex-wrap gap-2">
-        <NuxtLink to="/watch-orders" class="rounded-full border border-line px-5 py-2 font-semibold text-paper">
-          Watch orders
+        <NuxtLink to="/universes" class="rounded-full border border-line px-5 py-2 font-semibold text-paper">
+          Universes
         </NuxtLink>
         <button
           type="button"
@@ -66,14 +66,14 @@ async function createList() {
     <EmptyState
       v-else-if="!lists.length"
       title="No lists yet"
-      body="Make a list for comfort rewatches, weekend binges, or install a curated MCU / DC watch order."
+      body="Make a list for comfort rewatches, weekend binges, or install a curated universe."
     >
       <div class="flex flex-wrap gap-2">
         <button type="button" class="rounded-full bg-gold px-5 py-2 font-semibold text-ink" @click="showCreate = true">
           Create your first list
         </button>
-        <NuxtLink to="/watch-orders" class="rounded-full border border-line px-5 py-2 font-semibold text-paper">
-          Browse watch orders
+        <NuxtLink to="/universes" class="rounded-full border border-line px-5 py-2 font-semibold text-paper">
+          Browse universes
         </NuxtLink>
       </div>
     </EmptyState>

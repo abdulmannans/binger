@@ -1,15 +1,50 @@
-import { findWatchOrder } from '#shared/watchOrders'
+import { findUniverse } from '#shared/universes'
+import type { MediaType } from '#shared/types'
 
 const CHUNK_SIZE = 8
+
+interface InstallTitle {
+  tmdbId: number
+  mediaType: MediaType
+  title: string
+  year: number
+}
+
+async function resolveTitles(slug: string): Promise<{ name: string, description: string, titles: InstallTitle[] }> {
+  const collectionMatch = /^collection-(\d+)$/.exec(slug)
+  if (collectionMatch) {
+    const collection = await getCollection(Number(collectionMatch[1]))
+    return {
+      name: collection.name,
+      description: collection.overview || 'TMDB film collection',
+      titles: collection.parts.map(part => ({
+        tmdbId: part.tmdbId,
+        mediaType: part.mediaType,
+        title: part.title,
+        year: Number(part.year) || 0,
+      })),
+    }
+  }
+
+  const universe = findUniverse(slug)
+  if (!universe?.titles?.length) {
+    throw createError({ statusCode: 404, statusMessage: 'Universe not found' })
+  }
+  return {
+    name: universe.name,
+    description: universe.description,
+    titles: universe.titles,
+  }
+}
 
 export default defineEventHandler(async (event) => {
   const user = await requireUser(event)
   const slug = getRouterParam(event, 'slug')
-  const order = slug ? findWatchOrder(slug) : null
-  if (!order) {
-    throw createError({ statusCode: 404, statusMessage: 'Watch order not found' })
+  if (!slug) {
+    throw createError({ statusCode: 400, statusMessage: 'Missing universe slug' })
   }
 
+  const order = await resolveTitles(slug)
   const body = await readBody<{ listId?: string, offset?: number }>(event)
   const offset = Math.max(0, Number(body.offset) || 0)
 
@@ -34,13 +69,17 @@ export default defineEventHandler(async (event) => {
   const skipped: { title: string, year: number }[] = []
   let added = 0
 
-  const matches = await Promise.all(chunk.map(async (entry) => {
-    const mediaType = entry.mediaType || 'movie'
-    const card = await searchTitleByYear(entry.title, entry.year, mediaType)
-    return { entry, mediaType, card }
+  const cards = await Promise.all(chunk.map(async (entry) => {
+    try {
+      const card = await getTitleCard(entry.mediaType, entry.tmdbId)
+      return { entry, card }
+    }
+    catch {
+      return { entry, card: null }
+    }
   }))
 
-  for (const [index, match] of matches.entries()) {
+  for (const [index, match] of cards.entries()) {
     const position = String(offset + index + 1)
     if (!match.card) {
       skipped.push({ title: match.entry.title, year: match.entry.year })
@@ -59,7 +98,7 @@ export default defineEventHandler(async (event) => {
       media_type: match.card.mediaType,
       title: match.card.title,
       poster_path: match.card.posterPath || '',
-      year: match.card.year || String(match.entry.year),
+      year: match.card.year || String(match.entry.year || ''),
       imdb_id: match.card.imdbId || '',
       imdb_rating: match.card.imdbRating || '',
       user_rating: '',

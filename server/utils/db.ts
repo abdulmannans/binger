@@ -137,9 +137,11 @@ async function backfillZeroPositions(database: Client) {
       args: [listId],
     })
     for (const [index, item] of items.rows.entries()) {
+      const itemId = item.id
+      if (itemId == null) continue
       await database.execute({
         sql: 'UPDATE items SET position = ? WHERE id = ?',
-        args: [index + 1, item.id],
+        args: [index + 1, itemId],
       })
     }
   }

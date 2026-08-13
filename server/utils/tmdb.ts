@@ -102,59 +102,34 @@ export async function searchTitles(query: string): Promise<TitleCard[]> {
   return enrichCards(filtered)
 }
 
-const DISCOVER_QUERY: Record<string, { path: string, params: Record<string, string> }> = {
-  mcu: {
-    path: '/discover/movie',
-    params: {
-      with_companies: '420',
-      sort_by: 'primary_release_date.desc',
-      'with_runtime.gte': '40',
-      include_adult: 'false',
-    },
-  },
-  dc: {
-    path: '/discover/movie',
-    params: {
-      with_companies: '429|9993|128064',
-      sort_by: 'primary_release_date.desc',
-      'with_runtime.gte': '40',
-      include_adult: 'false',
-    },
-  },
-  animated: {
-    path: '/discover/movie',
-    params: {
-      with_genres: '16',
-      sort_by: 'popularity.desc',
-      'with_runtime.gte': '40',
-      include_adult: 'false',
-    },
-  },
-  'dc-animated': {
-    path: '/discover/movie',
-    params: {
-      with_companies: '429|9993',
-      with_genres: '16',
-      sort_by: 'primary_release_date.desc',
-      'with_runtime.gte': '40',
-      include_adult: 'false',
-    },
-  },
-}
+export type DiscoverTab = 'movie' | 'tv' | 'anime'
 
-export async function discoverByFilter(slug: string, page = 1): Promise<{ results: TitleCard[], page: number, totalPages: number }> {
-  const filter = DISCOVER_QUERY[slug]
-  if (!filter) {
-    throw createError({ statusCode: 400, statusMessage: 'Unknown discover filter' })
+export async function discoverByTab(tab: DiscoverTab, page = 1): Promise<{ results: TitleCard[], page: number, totalPages: number }> {
+  const safePage = String(Math.max(1, page))
+
+  if (tab === 'anime') {
+    const data = await tmdb<TmdbPaged<TmdbSearchResult> & { page?: number, total_pages?: number }>('/discover/tv', {
+      with_genres: '16',
+      with_origin_country: 'JP',
+      sort_by: 'popularity.desc',
+      include_adult: 'false',
+      language: 'en-US',
+      page: safePage,
+    })
+    const entries = (data.results ?? []).map(item => ({ item, mediaType: 'tv' as const }))
+    return {
+      results: await enrichCards(entries),
+      page: data.page ?? page,
+      totalPages: Math.min(data.total_pages ?? 1, 20),
+    }
   }
 
-  const data = await tmdb<TmdbPaged<TmdbSearchResult> & { page?: number, total_pages?: number }>(filter.path, {
-    ...filter.params,
-    page: String(Math.max(1, page)),
+  const path = tab === 'tv' ? '/trending/tv/week' : '/trending/movie/week'
+  const data = await tmdb<TmdbPaged<TmdbSearchResult> & { page?: number, total_pages?: number }>(path, {
     language: 'en-US',
+    page: safePage,
   })
-
-  const mediaType: MediaType = 'movie'
+  const mediaType: MediaType = tab
   const entries = (data.results ?? []).map(item => ({ item, mediaType }))
   return {
     results: await enrichCards(entries),
@@ -163,76 +138,85 @@ export async function discoverByFilter(slug: string, page = 1): Promise<{ result
   }
 }
 
-function normalizeTitle(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+interface TmdbCollectionPart extends TmdbSearchResult {
+  media_type?: string
 }
 
-export async function searchTitleByYear(title: string, year: number, mediaType: MediaType = 'movie'): Promise<TitleCard | null> {
-  const path = mediaType === 'tv' ? '/search/tv' : '/search/movie'
-  const params: Record<string, string> = {
-    query: title,
+interface TmdbCollection {
+  id: number
+  name: string
+  overview?: string
+  poster_path?: string | null
+  backdrop_path?: string | null
+  parts?: TmdbCollectionPart[]
+}
+
+interface TmdbCollectionResult {
+  id: number
+  name: string
+  overview?: string
+  poster_path?: string | null
+  backdrop_path?: string | null
+}
+
+export async function searchCollections(query: string) {
+  const data = await tmdb<TmdbPaged<TmdbCollectionResult>>('/search/collection', {
+    query,
     include_adult: 'false',
     language: 'en-US',
-  }
-  if (mediaType === 'tv') {
-    params.first_air_date_year = String(year)
-  }
-  else {
-    params.year = String(year)
-    params.primary_release_year = String(year)
-  }
-
-  const data = await tmdb<TmdbPaged<TmdbSearchResult>>(path, params)
-
-  let results = data.results ?? []
-  if (!results.length) {
-    const fallback = await tmdb<TmdbPaged<TmdbSearchResult>>(path, {
-      query: title,
-      include_adult: 'false',
-      language: 'en-US',
-    })
-    results = fallback.results ?? []
-  }
-
-  return pickBestTitle(results, title, year, mediaType)
+  })
+  return (data.results ?? []).slice(0, 20).map(item => ({
+    id: item.id,
+    name: item.name,
+    overview: item.overview ?? '',
+    posterPath: item.poster_path ?? null,
+    backdropPath: item.backdrop_path ?? null,
+  }))
 }
 
-function pickBestTitle(results: TmdbSearchResult[], title: string, year: number, mediaType: MediaType): TitleCard | null {
-  if (!results.length) return null
-  const needle = normalizeTitle(title)
-  const yearStr = String(year)
-
-  const scored = results.map((item) => {
-    const itemTitle = normalizeTitle(item.title || item.name || '')
-    const itemYear = yearFromDate(item.release_date || item.first_air_date)
-    let score = 0
-    if (itemTitle === needle) score += 6
-    else if (itemTitle.includes(needle) || needle.includes(itemTitle)) score += 3
-    if (itemYear === yearStr) score += 8
-    else if (itemYear && Math.abs(Number(itemYear) - year) <= 1) score += 3
-    return { item, score }
-  })
-
-  scored.sort((a, b) => b.score - a.score)
-  const best = scored[0]
-  if (!best || best.score < 9) return null
-  return toCard(best.item, mediaType)
+export async function getCollection(id: number) {
+  const data = await tmdb<TmdbCollection>(`/collection/${id}`, { language: 'en-US' })
+  const parts = (data.parts ?? [])
+    .slice()
+    .sort((a, b) => String(a.release_date || '').localeCompare(String(b.release_date || '')))
+  return {
+    id: data.id,
+    name: data.name,
+    overview: data.overview ?? '',
+    posterPath: data.poster_path ?? null,
+    backdropPath: data.backdrop_path ?? null,
+    parts: parts.map(part => toCard(part, 'movie')),
+  }
 }
 
-export async function trendingTitles(): Promise<TitleCard[]> {
-  const data = await tmdb<TmdbPaged<TmdbSearchResult>>('/trending/all/week', {
-    language: 'en-US',
-  })
-  const filtered = (data.results ?? [])
-    .map((item) => {
-      const mediaType = mediaTypeOf(item.media_type)
-      if (!mediaType) return null
-      return { item, mediaType }
-    })
-    .filter((entry): entry is { item: TmdbSearchResult, mediaType: MediaType } => entry != null)
-    .slice(0, 18)
+export async function getTitleCard(mediaType: MediaType, tmdbId: number): Promise<TitleCard> {
+  const data = await tmdb<TmdbSearchResult>(`/${mediaType}/${tmdbId}`, { language: 'en-US' })
+  return toCard(data, mediaType)
+}
 
-  return enrichCards(filtered)
+export async function getTitleCards(entries: { tmdbId: number, mediaType: MediaType }[]): Promise<TitleCard[]> {
+  const cards: TitleCard[] = []
+  const batchSize = 12
+  for (let i = 0; i < entries.length; i += batchSize) {
+    const batch = entries.slice(i, i + batchSize)
+    const resolved = await Promise.all(batch.map(async (entry) => {
+      try {
+        return await getTitleCard(entry.mediaType, entry.tmdbId)
+      }
+      catch {
+        return null
+      }
+    }))
+    for (const card of resolved) {
+      if (card) cards.push(card)
+    }
+  }
+  return cards
+}
+
+export function parseMediaType(value: unknown): MediaType {
+  if (value === 'tv' || value === 'movie') return value
+  throw createError({ statusCode: 400, statusMessage: 'mediaType must be movie or tv' })
 }
 
 async function enrichCards(entries: { item: TmdbSearchResult, mediaType: MediaType }[]): Promise<TitleCard[]> {
@@ -329,9 +313,4 @@ export async function getImdbRating(imdbId: string): Promise<string | null> {
     imdbRatingCache.set(imdbId, null)
     return null
   }
-}
-
-export function parseMediaType(value: unknown): MediaType {
-  if (value === 'tv' || value === 'movie') return value
-  throw createError({ statusCode: 400, statusMessage: 'mediaType must be movie or tv' })
 }

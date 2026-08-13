@@ -1,18 +1,14 @@
-import { isDiscoverFilter } from '#shared/discoverFilters'
+export type DiscoverTab = 'movie' | 'tv' | 'anime'
+
+function parseTab(value: unknown): DiscoverTab | null {
+  if (value === 'movie' || value === 'tv' || value === 'anime') return value
+  return null
+}
 
 export default defineEventHandler(async (event) => {
   await requireUser(event)
   const query = getQuery(event)
-  const filter = typeof query.filter === 'string' ? query.filter : ''
+  const tab = parseTab(query.tab) ?? 'movie'
   const page = Math.max(1, Number(query.page) || 1)
-
-  if (filter) {
-    if (!isDiscoverFilter(filter)) {
-      throw createError({ statusCode: 400, statusMessage: 'Unknown discover filter' })
-    }
-    return await discoverByFilter(filter, page)
-  }
-
-  const results = await trendingTitles()
-  return { results, page: 1, totalPages: 1 }
+  return await discoverByTab(tab, page)
 })

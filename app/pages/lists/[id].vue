@@ -69,7 +69,9 @@ async function moveItem(index: number, direction: -1 | 1) {
   const next = index + direction
   if (next < 0 || next >= list.value.items.length) return
   const ids = list.value.items.map(item => item.id)
-  const [moved] = ids.splice(index, 1)
+  const moved = ids[index]
+  if (!moved) return
+  ids.splice(index, 1)
   ids.splice(next, 0, moved)
   await $fetch(`/api/lists/${id.value}/reorder`, {
     method: 'POST',

@@ -5,7 +5,7 @@ const route = useRoute()
 const links = [
   { to: '/', label: 'Discover' },
   { to: '/lists', label: 'Lists' },
-  { to: '/watch-orders', label: 'Watch order' },
+  { to: '/universes', label: 'Universes' },
 ]
 </script>
 
