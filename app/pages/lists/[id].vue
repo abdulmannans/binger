@@ -63,6 +63,20 @@ async function removeItem(itemId: string) {
   await $fetch(`/api/items/${itemId}`, { method: 'DELETE' })
   await refresh()
 }
+
+async function moveItem(index: number, direction: -1 | 1) {
+  if (!list.value) return
+  const next = index + direction
+  if (next < 0 || next >= list.value.items.length) return
+  const ids = list.value.items.map(item => item.id)
+  const [moved] = ids.splice(index, 1)
+  ids.splice(next, 0, moved)
+  await $fetch(`/api/lists/${id.value}/reorder`, {
+    method: 'POST',
+    body: { ids },
+  })
+  await refresh()
+}
 </script>
 
 <template>
@@ -83,7 +97,7 @@ async function removeItem(itemId: string) {
             <button type="button" class="rounded-xl px-4 py-2 text-sm text-mist" @click="editing = false">Cancel</button>
           </div>
         </form>
-        <p class="mt-3 text-sm text-mist">{{ list.items.length }} title{{ list.items.length === 1 ? '' : 's' }}</p>
+        <p class="mt-3 text-sm text-mist">{{ list.items.length }} title{{ list.items.length === 1 ? '' : 's' }} · numbered watch order</p>
       </div>
       <div class="flex gap-2">
         <button type="button" class="rounded-full border border-line px-4 py-2 text-sm" @click="editing = true">Rename</button>
@@ -93,6 +107,9 @@ async function removeItem(itemId: string) {
       </div>
     </div>
     <p v-if="error" class="mt-3 text-sm text-flare">{{ error }}</p>
+    <p v-if="route.query.missed" class="mt-3 text-sm text-mist">
+      Installed with a few unmatched titles: {{ route.query.missed }}
+    </p>
 
     <EmptyState
       v-if="!list.items.length"
@@ -104,9 +121,10 @@ async function removeItem(itemId: string) {
     </EmptyState>
 
     <div v-else class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-      <div v-for="item in list.items" :key="item.id" class="space-y-2">
+      <div v-for="(item, index) in list.items" :key="item.id" class="space-y-2">
         <PosterCard
           compact
+          :order="index + 1"
           :tmdb-id="item.tmdbId"
           :media-type="item.mediaType"
           :title="item.title"
@@ -119,7 +137,25 @@ async function removeItem(itemId: string) {
           <span v-if="item.status">{{ STATUS_LABELS[item.status] }}</span>
           <span v-if="item.notes" class="line-clamp-2">{{ item.notes }}</span>
         </p>
-        <button type="button" class="text-xs text-flare hover:underline" @click="removeItem(item.id)">Remove</button>
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <button
+            type="button"
+            class="text-mist hover:text-gold disabled:opacity-30"
+            :disabled="index === 0"
+            @click="moveItem(index, -1)"
+          >
+            Up
+          </button>
+          <button
+            type="button"
+            class="text-mist hover:text-gold disabled:opacity-30"
+            :disabled="index === list.items.length - 1"
+            @click="moveItem(index, 1)"
+          >
+            Down
+          </button>
+          <button type="button" class="text-flare hover:underline" @click="removeItem(item.id)">Remove</button>
+        </div>
       </div>
     </div>
   </div>

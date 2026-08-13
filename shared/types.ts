@@ -38,6 +38,7 @@ export interface SheetItem {
   notes: string
   status: WatchStatus | ''
   added_at: string
+  position: string
 }
 
 export interface TitleCard {
@@ -91,4 +92,5 @@ export interface LibraryItem {
   notes: string
   status: WatchStatus | ''
   addedAt: string
+  position: number
 }

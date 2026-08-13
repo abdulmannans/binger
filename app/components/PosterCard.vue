@@ -13,6 +13,7 @@ const props = defineProps<{
   userRating?: number | null
   status?: string
   compact?: boolean
+  order?: number
 }>()
 
 const emit = defineEmits<{
@@ -46,7 +47,10 @@ const ratingLabel = computed(() => props.imdbRating ? 'IMDb' : (props.tmdbRating
             <span v-if="year"> · {{ year }}</span>
           </p>
         </div>
-        <div v-if="rating" class="absolute left-2 top-2 flex items-center gap-1 rounded-md bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold">
+        <div v-if="order" class="absolute left-2 top-2 z-10 rounded-md bg-gold px-1.5 py-0.5 text-[11px] font-semibold text-ink">
+          {{ order }}
+        </div>
+        <div v-if="rating" class="absolute top-2 flex items-center gap-1 rounded-md bg-black/80 px-1.5 py-0.5 text-[11px] font-semibold" :class="order ? 'left-12' : 'left-2'">
           <span class="text-gold">{{ ratingLabel }}</span>
           <span>{{ rating }}</span>
         </div>

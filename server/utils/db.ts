@@ -89,17 +89,60 @@ export async function ensureSchema() {
       user_rating TEXT NOT NULL DEFAULT '',
       notes TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT '',
-      added_at TEXT NOT NULL
+      added_at TEXT NOT NULL,
+      position INTEGER NOT NULL DEFAULT 0
     );
     CREATE INDEX IF NOT EXISTS idx_lists_user ON lists(user_id);
     CREATE INDEX IF NOT EXISTS idx_items_list ON items(list_id);
     CREATE INDEX IF NOT EXISTS idx_items_user ON items(user_id);
   `)
+    await ensurePositionColumn(database)
   }
   catch (error) {
     dbFailure(error)
   }
   schemaReady = true
+}
+
+async function ensurePositionColumn(database: Client) {
+  try {
+    const info = await database.execute('PRAGMA table_info(items)')
+    const hasPosition = info.rows.some(row => String(row.name) === 'position')
+    if (!hasPosition) {
+      await database.execute('ALTER TABLE items ADD COLUMN position INTEGER NOT NULL DEFAULT 0')
+    }
+    await backfillZeroPositions(database)
+  }
+  catch {
+    try {
+      await database.execute('ALTER TABLE items ADD COLUMN position INTEGER NOT NULL DEFAULT 0')
+    }
+    catch {
+      // already exists
+    }
+    await backfillZeroPositions(database)
+  }
+}
+
+async function backfillZeroPositions(database: Client) {
+  const lists = await database.execute(`
+    SELECT list_id FROM items
+    GROUP BY list_id
+    HAVING MAX(position) = 0 AND COUNT(*) > 0
+  `)
+  for (const row of lists.rows) {
+    const listId = String(row.list_id)
+    const items = await database.execute({
+      sql: 'SELECT id FROM items WHERE list_id = ? ORDER BY added_at ASC',
+      args: [listId],
+    })
+    for (const [index, item] of items.rows.entries()) {
+      await database.execute({
+        sql: 'UPDATE items SET position = ? WHERE id = ?',
+        args: [index + 1, item.id],
+      })
+    }
+  }
 }
 
 function text(value: unknown) {
@@ -142,6 +185,7 @@ function toItem(row: Record<string, unknown>): SheetItem {
     notes: text(row.notes),
     status: (text(row.status) as WatchStatus | ''),
     added_at: text(row.added_at),
+    position: text(row.position || '0'),
   }
 }
 
@@ -230,7 +274,7 @@ export async function listItemsByUser(userId: string) {
 export async function listItemsByList(listId: string) {
   await ensureSchema()
   const result = await db().execute({
-    sql: 'SELECT * FROM items WHERE list_id = ? ORDER BY added_at DESC',
+    sql: 'SELECT * FROM items WHERE list_id = ? ORDER BY position ASC, year ASC, added_at ASC',
     args: [listId],
   })
   return result.rows.map(row => toItem(row as unknown as Record<string, unknown>))
@@ -251,8 +295,8 @@ export async function createItem(item: SheetItem) {
   await db().execute({
     sql: `INSERT INTO items (
       id, list_id, user_id, tmdb_id, media_type, title, poster_path, year,
-      imdb_id, imdb_rating, user_rating, notes, status, added_at
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      imdb_id, imdb_rating, user_rating, notes, status, added_at, position
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       item.id,
       item.list_id,
@@ -268,6 +312,7 @@ export async function createItem(item: SheetItem) {
       item.notes,
       item.status,
       item.added_at,
+      item.position || '0',
     ],
   })
   return item
@@ -277,9 +322,9 @@ export async function updateItem(item: SheetItem) {
   await ensureSchema()
   await db().execute({
     sql: `UPDATE items SET
-      user_rating = ?, notes = ?, status = ?
+      user_rating = ?, notes = ?, status = ?, position = ?
       WHERE id = ?`,
-    args: [item.user_rating, item.notes, item.status, item.id],
+    args: [item.user_rating, item.notes, item.status, item.position || '0', item.id],
   })
   return item
 }
@@ -312,6 +357,28 @@ export function toLibraryItem(item: SheetItem) {
     notes: item.notes,
     status: (item.status || '') as WatchStatus | '',
     addedAt: item.added_at,
+    position: Number(item.position) || 0,
+  }
+}
+
+export async function nextItemPosition(listId: string) {
+  await ensureSchema()
+  const result = await db().execute({
+    sql: 'SELECT MAX(position) as max_pos FROM items WHERE list_id = ?',
+    args: [listId],
+  })
+  const max = Number(result.rows[0]?.max_pos ?? 0)
+  return Number.isFinite(max) ? max + 1 : 1
+}
+
+export async function reorderListItems(listId: string, ids: string[]) {
+  await ensureSchema()
+  const database = db()
+  for (const [index, id] of ids.entries()) {
+    await database.execute({
+      sql: 'UPDATE items SET position = ? WHERE id = ? AND list_id = ?',
+      args: [index + 1, id, listId],
+    })
   }
 }
 

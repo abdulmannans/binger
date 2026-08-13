@@ -5,6 +5,7 @@ const route = useRoute()
 const links = [
   { to: '/', label: 'Discover' },
   { to: '/lists', label: 'Lists' },
+  { to: '/watch-orders', label: 'Watch order' },
 ]
 </script>
 
@@ -21,7 +22,7 @@ const links = [
           :key="link.to"
           :to="link.to"
           class="rounded-full px-3 py-1.5 text-mist transition hover:bg-panel hover:text-paper"
-          :class="route.path === link.to ? 'bg-panel text-paper' : ''"
+          :class="route.path === link.to || (link.to !== '/' && route.path.startsWith(link.to)) ? 'bg-panel text-paper' : ''"
         >
           {{ link.label }}
         </NuxtLink>

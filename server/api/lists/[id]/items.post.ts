@@ -42,6 +42,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const status = body.status && isWatchStatus(body.status) ? body.status : 'want'
+  const position = await nextItemPosition(listId)
 
   const item = await createItem({
     id: newId(),
@@ -58,6 +59,7 @@ export default defineEventHandler(async (event) => {
     notes: body.notes?.trim() || '',
     status,
     added_at: new Date().toISOString(),
+    position: String(position),
   })
 
   return { item: toLibraryItem(item) }

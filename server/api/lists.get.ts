@@ -9,7 +9,10 @@ export default defineEventHandler(async (event) => {
     .slice()
     .sort((a, b) => b.created_at.localeCompare(a.created_at))
     .map((list) => {
-      const listItems = items.filter(item => item.list_id === list.id)
+      const listItems = items
+        .filter(item => item.list_id === list.id)
+        .slice()
+        .sort((a, b) => Number(a.position) - Number(b.position) || a.added_at.localeCompare(b.added_at))
       return {
         id: list.id,
         name: list.name,
