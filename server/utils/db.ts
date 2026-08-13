@@ -1,0 +1,290 @@
+import { mkdirSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { createClient, type Client } from '@libsql/client'
+import type { MediaType, SheetItem, SheetList, SheetUser, WatchStatus } from '#shared/types'
+
+const DEFAULT_DB_URL = 'file:data/bingewatcher.db'
+
+let client: Client | null = null
+let schemaReady = false
+
+function databaseUrl() {
+  return (useRuntimeConfig().databaseUrl as string) || DEFAULT_DB_URL
+}
+
+function resolveDbUrl(url: string) {
+  if (!url.startsWith('file:')) return url
+  const pathPart = url.replace(/^file:(\/\/)?/, '')
+  const abs = resolve(pathPart)
+  mkdirSync(dirname(abs), { recursive: true })
+  return `file:${abs}`
+}
+
+export function db() {
+  if (client) return client
+  const url = resolveDbUrl(databaseUrl())
+  const authToken = useRuntimeConfig().databaseAuthToken as string
+  client = createClient({
+    url,
+    authToken: authToken || undefined,
+  })
+  return client
+}
+
+export async function ensureSchema() {
+  if (schemaReady) return
+  const database = db()
+  await database.executeMultiple(`
+    CREATE TABLE IF NOT EXISTS users (
+      id TEXT PRIMARY KEY,
+      email TEXT NOT NULL UNIQUE,
+      password_hash TEXT NOT NULL,
+      display_name TEXT NOT NULL,
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS lists (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      description TEXT NOT NULL DEFAULT '',
+      created_at TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS items (
+      id TEXT PRIMARY KEY,
+      list_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      tmdb_id TEXT NOT NULL,
+      media_type TEXT NOT NULL,
+      title TEXT NOT NULL,
+      poster_path TEXT NOT NULL DEFAULT '',
+      year TEXT NOT NULL DEFAULT '',
+      imdb_id TEXT NOT NULL DEFAULT '',
+      imdb_rating TEXT NOT NULL DEFAULT '',
+      user_rating TEXT NOT NULL DEFAULT '',
+      notes TEXT NOT NULL DEFAULT '',
+      status TEXT NOT NULL DEFAULT '',
+      added_at TEXT NOT NULL
+    );
+    CREATE INDEX IF NOT EXISTS idx_lists_user ON lists(user_id);
+    CREATE INDEX IF NOT EXISTS idx_items_list ON items(list_id);
+    CREATE INDEX IF NOT EXISTS idx_items_user ON items(user_id);
+  `)
+  schemaReady = true
+}
+
+function text(value: unknown) {
+  return value == null ? '' : String(value)
+}
+
+function toUser(row: Record<string, unknown>): SheetUser {
+  return {
+    id: text(row.id),
+    email: text(row.email),
+    password_hash: text(row.password_hash),
+    display_name: text(row.display_name),
+    created_at: text(row.created_at),
+  }
+}
+
+function toList(row: Record<string, unknown>): SheetList {
+  return {
+    id: text(row.id),
+    user_id: text(row.user_id),
+    name: text(row.name),
+    description: text(row.description),
+    created_at: text(row.created_at),
+  }
+}
+
+function toItem(row: Record<string, unknown>): SheetItem {
+  return {
+    id: text(row.id),
+    list_id: text(row.list_id),
+    user_id: text(row.user_id),
+    tmdb_id: text(row.tmdb_id),
+    media_type: row.media_type === 'tv' ? 'tv' : 'movie',
+    title: text(row.title),
+    poster_path: text(row.poster_path),
+    year: text(row.year),
+    imdb_id: text(row.imdb_id),
+    imdb_rating: text(row.imdb_rating),
+    user_rating: text(row.user_rating),
+    notes: text(row.notes),
+    status: (text(row.status) as WatchStatus | ''),
+    added_at: text(row.added_at),
+  }
+}
+
+export async function findUserByEmail(email: string) {
+  await ensureSchema()
+  const result = await db().execute({
+    sql: 'SELECT * FROM users WHERE lower(email) = ? LIMIT 1',
+    args: [email.trim().toLowerCase()],
+  })
+  const row = result.rows[0]
+  return row ? toUser(row as unknown as Record<string, unknown>) : null
+}
+
+export async function findUserById(id: string) {
+  await ensureSchema()
+  const result = await db().execute({
+    sql: 'SELECT * FROM users WHERE id = ? LIMIT 1',
+    args: [id],
+  })
+  const row = result.rows[0]
+  return row ? toUser(row as unknown as Record<string, unknown>) : null
+}
+
+export async function createUser(user: SheetUser) {
+  await ensureSchema()
+  await db().execute({
+    sql: 'INSERT INTO users (id, email, password_hash, display_name, created_at) VALUES (?, ?, ?, ?, ?)',
+    args: [user.id, user.email, user.password_hash, user.display_name, user.created_at],
+  })
+  return user
+}
+
+export async function listListsByUser(userId: string) {
+  await ensureSchema()
+  const result = await db().execute({
+    sql: 'SELECT * FROM lists WHERE user_id = ? ORDER BY created_at DESC',
+    args: [userId],
+  })
+  return result.rows.map(row => toList(row as unknown as Record<string, unknown>))
+}
+
+export async function findListById(id: string) {
+  await ensureSchema()
+  const result = await db().execute({
+    sql: 'SELECT * FROM lists WHERE id = ? LIMIT 1',
+    args: [id],
+  })
+  const row = result.rows[0]
+  return row ? toList(row as unknown as Record<string, unknown>) : null
+}
+
+export async function createList(list: SheetList) {
+  await ensureSchema()
+  await db().execute({
+    sql: 'INSERT INTO lists (id, user_id, name, description, created_at) VALUES (?, ?, ?, ?, ?)',
+    args: [list.id, list.user_id, list.name, list.description, list.created_at],
+  })
+  return list
+}
+
+export async function updateList(list: SheetList) {
+  await ensureSchema()
+  await db().execute({
+    sql: 'UPDATE lists SET name = ?, description = ? WHERE id = ?',
+    args: [list.name, list.description, list.id],
+  })
+  return list
+}
+
+export async function deleteList(id: string) {
+  await ensureSchema()
+  const database = db()
+  await database.execute({ sql: 'DELETE FROM items WHERE list_id = ?', args: [id] })
+  await database.execute({ sql: 'DELETE FROM lists WHERE id = ?', args: [id] })
+}
+
+export async function listItemsByUser(userId: string) {
+  await ensureSchema()
+  const result = await db().execute({
+    sql: 'SELECT * FROM items WHERE user_id = ? ORDER BY added_at DESC',
+    args: [userId],
+  })
+  return result.rows.map(row => toItem(row as unknown as Record<string, unknown>))
+}
+
+export async function listItemsByList(listId: string) {
+  await ensureSchema()
+  const result = await db().execute({
+    sql: 'SELECT * FROM items WHERE list_id = ? ORDER BY added_at DESC',
+    args: [listId],
+  })
+  return result.rows.map(row => toItem(row as unknown as Record<string, unknown>))
+}
+
+export async function findItemById(id: string) {
+  await ensureSchema()
+  const result = await db().execute({
+    sql: 'SELECT * FROM items WHERE id = ? LIMIT 1',
+    args: [id],
+  })
+  const row = result.rows[0]
+  return row ? toItem(row as unknown as Record<string, unknown>) : null
+}
+
+export async function createItem(item: SheetItem) {
+  await ensureSchema()
+  await db().execute({
+    sql: `INSERT INTO items (
+      id, list_id, user_id, tmdb_id, media_type, title, poster_path, year,
+      imdb_id, imdb_rating, user_rating, notes, status, added_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    args: [
+      item.id,
+      item.list_id,
+      item.user_id,
+      item.tmdb_id,
+      item.media_type,
+      item.title,
+      item.poster_path,
+      item.year,
+      item.imdb_id,
+      item.imdb_rating,
+      item.user_rating,
+      item.notes,
+      item.status,
+      item.added_at,
+    ],
+  })
+  return item
+}
+
+export async function updateItem(item: SheetItem) {
+  await ensureSchema()
+  await db().execute({
+    sql: `UPDATE items SET
+      user_rating = ?, notes = ?, status = ?
+      WHERE id = ?`,
+    args: [item.user_rating, item.notes, item.status, item.id],
+  })
+  return item
+}
+
+export async function deleteItem(id: string) {
+  await ensureSchema()
+  await db().execute({
+    sql: 'DELETE FROM items WHERE id = ?',
+    args: [id],
+  })
+}
+
+export function newId() {
+  return crypto.randomUUID()
+}
+
+export function toLibraryItem(item: SheetItem) {
+  const rating = item.user_rating.trim()
+  return {
+    id: item.id,
+    listId: item.list_id,
+    tmdbId: Number(item.tmdb_id),
+    mediaType: (item.media_type === 'tv' ? 'tv' : 'movie') as MediaType,
+    title: item.title,
+    posterPath: item.poster_path || null,
+    year: item.year || null,
+    imdbId: item.imdb_id || null,
+    imdbRating: item.imdb_rating || null,
+    userRating: rating ? Number(rating) : null,
+    notes: item.notes,
+    status: (item.status || '') as WatchStatus | '',
+    addedAt: item.added_at,
+  }
+}
+
+export function isWatchStatus(value: unknown): value is WatchStatus {
+  return value === 'want' || value === 'watching' || value === 'watched'
+}
