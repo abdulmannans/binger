@@ -157,11 +157,13 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
           <h2 class="font-display text-2xl font-medium tracking-tight">{{ section.label }}</h2>
           <p class="text-sm text-mist">{{ section.items.length }}</p>
         </div>
-        <div
-          class="poster-grid"
-          style="display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.75rem"
-        >
-          <div v-for="(item, index) in section.items" :key="item.id" class="min-w-0 space-y-2">
+        <PosterGrid>
+          <div
+            v-for="(item, index) in section.items"
+            :key="item.id"
+            class="space-y-2"
+            style="width: 140px; flex: 0 0 140px"
+          >
             <PosterCard
               compact
               :order="index + 1"
@@ -195,7 +197,7 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
               <button type="button" class="text-flare hover:underline" @click="removeItem(item.id)">Remove</button>
             </div>
           </div>
-        </div>
+        </PosterGrid>
       </section>
     </div>
   </div>

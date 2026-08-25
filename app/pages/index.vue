@@ -250,23 +250,20 @@ function onAdded(title: TitleCard) {
         </div>
         <p class="text-sm text-mist">{{ forYou.length }}</p>
       </div>
-      <div
-        v-if="forYouLoading"
-        class="poster-grid"
-        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.75rem"
-      >
-        <div v-for="n in 8" :key="n" class="animate-pulse rounded-lg bg-panel-2" style="aspect-ratio: 2 / 3" />
-      </div>
+      <PosterGrid v-if="forYouLoading">
+        <div
+          v-for="n in 8"
+          :key="n"
+          class="animate-pulse rounded-lg bg-panel-2"
+          style="width: 140px; height: 210px; flex: 0 0 140px"
+        />
+      </PosterGrid>
       <EmptyState
         v-else-if="!forYou.length"
         title="No recommendations yet"
         body="Add a few titles and mark them Want or Watched — we will pull similar picks from TMDB."
       />
-      <div
-        v-else
-        class="poster-grid"
-        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.75rem"
-      >
+      <PosterGrid v-else>
         <PosterCard
           v-for="title in forYou"
           :key="`fy-${title.mediaType}-${title.tmdbId}`"
@@ -281,7 +278,7 @@ function onAdded(title: TitleCard) {
           :in-library="isInLibrary(title)"
           @add="adding = title"
         />
-      </div>
+      </PosterGrid>
     </section>
 
     <section>
@@ -290,13 +287,14 @@ function onAdded(title: TitleCard) {
         <p class="text-sm text-mist">{{ grid.length }}</p>
       </div>
 
-      <div
-        v-if="catalogLoading && !showingSearch"
-        class="poster-grid"
-        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.75rem"
-      >
-        <div v-for="n in 14" :key="n" class="animate-pulse rounded-lg bg-panel-2" style="aspect-ratio: 2 / 3" />
-      </div>
+      <PosterGrid v-if="catalogLoading && !showingSearch">
+        <div
+          v-for="n in 14"
+          :key="n"
+          class="animate-pulse rounded-lg bg-panel-2"
+          style="width: 140px; height: 210px; flex: 0 0 140px"
+        />
+      </PosterGrid>
 
       <EmptyState
         v-else-if="showingSearch && !loading && !grid.length"
@@ -304,11 +302,7 @@ function onAdded(title: TitleCard) {
         body="Try another title, or switch between the movie name and the series name."
       />
 
-      <div
-        v-else
-        class="poster-grid"
-        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.75rem"
-      >
+      <PosterGrid v-else>
         <PosterCard
           v-for="title in grid"
           :key="`${title.mediaType}-${title.tmdbId}`"
@@ -323,7 +317,7 @@ function onAdded(title: TitleCard) {
           :in-library="isInLibrary(title)"
           @add="adding = title"
         />
-      </div>
+      </PosterGrid>
 
       <div v-if="!showingSearch && page < totalPages" class="mt-10 flex justify-center">
         <button

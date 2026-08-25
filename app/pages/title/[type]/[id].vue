@@ -163,10 +163,7 @@ async function onAdded() {
         </div>
         <p class="text-sm text-mist">{{ recommendations.length }}</p>
       </div>
-      <div
-        class="poster-grid"
-        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.75rem"
-      >
+      <PosterGrid>
         <PosterCard
           v-for="card in recommendations"
           :key="`${card.mediaType}-${card.tmdbId}`"
@@ -181,7 +178,7 @@ async function onAdded() {
           :in-library="isInLibrary(card)"
           @add="addingRec = card"
         />
-      </div>
+      </PosterGrid>
     </section>
 
     <AddToListModal

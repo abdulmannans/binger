@@ -22,7 +22,7 @@ const emit = defineEmits<{
   add: []
 }>()
 
-const src = computed(() => posterUrl(props.posterPath, 'w342'))
+const src = computed(() => posterUrl(props.posterPath, 'w185'))
 const href = computed(() => `/title/${props.mediaType}/${props.tmdbId}`)
 const rating = computed(() => props.imdbRating || (props.tmdbRating != null ? String(props.tmdbRating) : null))
 const ratingLabel = computed(() => props.imdbRating ? 'IMDb' : (props.tmdbRating != null ? 'TMDB' : null))
@@ -30,20 +30,29 @@ const genreLine = computed(() => (props.genres ?? []).slice(0, 2).join(' · '))
 </script>
 
 <template>
-  <article class="group relative min-w-0">
+  <!-- Fixed tile width — hard lock so posters never stretch full row -->
+  <article
+    class="group relative"
+    style="width: 140px; max-width: 140px; flex: 0 0 140px; min-width: 140px; box-sizing: border-box"
+  >
     <NuxtLink
       :to="href"
       class="block overflow-hidden rounded-lg bg-panel ring-1 ring-line transition duration-300 hover:-translate-y-0.5 hover:ring-ink/20"
+      style="width: 140px"
     >
-      <div class="relative overflow-hidden bg-panel-2" style="aspect-ratio: 2 / 3; width: 100%">
+      <div
+        class="relative overflow-hidden bg-panel-2"
+        style="width: 140px; height: 210px; aspect-ratio: 2 / 3"
+      >
         <img
           v-if="src"
           :src="src"
           :alt="title"
-          width="342"
-          height="513"
+          width="140"
+          height="210"
           class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
           loading="lazy"
+          style="width: 140px; height: 210px; object-fit: cover"
         >
         <div
           v-else
@@ -52,8 +61,8 @@ const genreLine = computed(() => (props.genres ?? []).slice(0, 2).join(' · '))
           {{ title.slice(0, 1) }}
         </div>
         <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2 pt-8">
-          <p class="line-clamp-2 text-xs font-medium leading-snug text-white sm:text-sm">{{ title }}</p>
-          <p class="mt-0.5 text-[10px] text-white/70 sm:text-xs">
+          <p class="line-clamp-2 text-[11px] font-medium leading-snug text-white">{{ title }}</p>
+          <p class="mt-0.5 text-[10px] text-white/70">
             <span>{{ mediaType === 'tv' ? 'Series' : 'Movie' }}</span>
             <span v-if="year"> · {{ year }}</span>
           </p>
