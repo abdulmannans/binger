@@ -250,20 +250,20 @@ function onAdded(title: TitleCard) {
         </div>
         <p class="text-sm text-mist">{{ forYou.length }}</p>
       </div>
-      <PosterGrid v-if="forYouLoading">
+      <div v-if="forYouLoading" class="bw-shelf">
         <div
           v-for="n in 8"
           :key="n"
-          class="animate-pulse rounded-lg bg-panel-2"
-          style="width: 140px; height: 210px; flex: 0 0 140px"
+          class="bw-tile animate-pulse rounded-lg bg-panel-2"
+          style="height: 210px"
         />
-      </PosterGrid>
+      </div>
       <EmptyState
         v-else-if="!forYou.length"
         title="No recommendations yet"
         body="Add a few titles and mark them Want or Watched — we will pull similar picks from TMDB."
       />
-      <PosterGrid v-else>
+      <div v-else class="bw-shelf">
         <PosterCard
           v-for="title in forYou"
           :key="`fy-${title.mediaType}-${title.tmdbId}`"
@@ -278,7 +278,7 @@ function onAdded(title: TitleCard) {
           :in-library="isInLibrary(title)"
           @add="adding = title"
         />
-      </PosterGrid>
+      </div>
     </section>
 
     <section>
@@ -287,14 +287,14 @@ function onAdded(title: TitleCard) {
         <p class="text-sm text-mist">{{ grid.length }}</p>
       </div>
 
-      <PosterGrid v-if="catalogLoading && !showingSearch">
+      <div v-if="catalogLoading && !showingSearch" class="bw-shelf">
         <div
           v-for="n in 14"
           :key="n"
-          class="animate-pulse rounded-lg bg-panel-2"
-          style="width: 140px; height: 210px; flex: 0 0 140px"
+          class="bw-tile animate-pulse rounded-lg bg-panel-2"
+          style="height: 210px"
         />
-      </PosterGrid>
+      </div>
 
       <EmptyState
         v-else-if="showingSearch && !loading && !grid.length"
@@ -302,7 +302,7 @@ function onAdded(title: TitleCard) {
         body="Try another title, or switch between the movie name and the series name."
       />
 
-      <PosterGrid v-else>
+      <div v-else class="bw-shelf">
         <PosterCard
           v-for="title in grid"
           :key="`${title.mediaType}-${title.tmdbId}`"
@@ -317,7 +317,7 @@ function onAdded(title: TitleCard) {
           :in-library="isInLibrary(title)"
           @add="adding = title"
         />
-      </PosterGrid>
+      </div>
 
       <div v-if="!showingSearch && page < totalPages" class="mt-10 flex justify-center">
         <button

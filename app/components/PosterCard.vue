@@ -30,29 +30,24 @@ const genreLine = computed(() => (props.genres ?? []).slice(0, 2).join(' · '))
 </script>
 
 <template>
-  <!-- Fixed tile width — hard lock so posters never stretch full row -->
-  <article
-    class="group relative"
-    style="width: 140px; max-width: 140px; flex: 0 0 140px; min-width: 140px; box-sizing: border-box"
-  >
+  <!--
+    inline-block + fixed size so tiles wrap in a row even if the parent
+    flex/grid wrapper fails to mount (unknown custom element, etc.).
+  -->
+  <article class="bw-tile group relative">
     <NuxtLink
       :to="href"
-      class="block overflow-hidden rounded-lg bg-panel ring-1 ring-line transition duration-300 hover:-translate-y-0.5 hover:ring-ink/20"
-      style="width: 140px"
+      class="bw-tile__link block overflow-hidden rounded-lg bg-panel ring-1 ring-line transition duration-300 hover:-translate-y-0.5 hover:ring-ink/20"
     >
-      <div
-        class="relative overflow-hidden bg-panel-2"
-        style="width: 140px; height: 210px; aspect-ratio: 2 / 3"
-      >
+      <div class="bw-tile__media relative overflow-hidden bg-panel-2">
         <img
           v-if="src"
           :src="src"
           :alt="title"
           width="140"
           height="210"
-          class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+          class="bw-tile__img absolute inset-0 object-cover transition duration-500 group-hover:scale-[1.03]"
           loading="lazy"
-          style="width: 140px; height: 210px; object-fit: cover"
         >
         <div
           v-else
@@ -110,3 +105,34 @@ const genreLine = computed(() => (props.genres ?? []).slice(0, 2).join(' · '))
     </button>
   </article>
 </template>
+
+<style>
+/* Unlayered — beats Tailwind @layer utilities/components */
+.bw-tile {
+  display: inline-block !important;
+  vertical-align: top !important;
+  width: 140px !important;
+  max-width: 140px !important;
+  min-width: 140px !important;
+  margin: 0 12px 12px 0 !important;
+  box-sizing: border-box !important;
+}
+.bw-tile__link,
+.bw-tile__media {
+  width: 140px !important;
+  max-width: 140px !important;
+}
+.bw-tile__media {
+  height: 210px !important;
+}
+.bw-tile__img {
+  width: 140px !important;
+  height: 210px !important;
+  object-fit: cover !important;
+}
+.bw-shelf {
+  display: block !important;
+  width: 100% !important;
+  line-height: 0;
+}
+</style>

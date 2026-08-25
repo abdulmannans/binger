@@ -163,7 +163,7 @@ async function onAdded() {
         </div>
         <p class="text-sm text-mist">{{ recommendations.length }}</p>
       </div>
-      <PosterGrid>
+      <div class="bw-shelf">
         <PosterCard
           v-for="card in recommendations"
           :key="`${card.mediaType}-${card.tmdbId}`"
@@ -178,7 +178,7 @@ async function onAdded() {
           :in-library="isInLibrary(card)"
           @add="addingRec = card"
         />
-      </PosterGrid>
+      </div>
     </section>
 
     <AddToListModal

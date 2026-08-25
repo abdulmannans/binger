@@ -157,12 +157,11 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
           <h2 class="font-display text-2xl font-medium tracking-tight">{{ section.label }}</h2>
           <p class="text-sm text-mist">{{ section.items.length }}</p>
         </div>
-        <PosterGrid>
+        <div class="bw-shelf">
           <div
             v-for="(item, index) in section.items"
             :key="item.id"
-            class="space-y-2"
-            style="width: 140px; flex: 0 0 140px"
+            style="display: inline-block; vertical-align: top; width: 140px; margin: 0 12px 12px 0; line-height: normal"
           >
             <PosterCard
               compact
@@ -176,8 +175,8 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
               :user-rating="item.userRating"
               :genres="item.genres"
             />
-            <p v-if="item.notes" class="line-clamp-2 text-xs text-mist">{{ item.notes }}</p>
-            <div class="flex flex-wrap items-center gap-2 text-xs">
+            <p v-if="item.notes" class="line-clamp-2 text-xs text-mist" style="line-height: 1.3; margin-top: 4px">{{ item.notes }}</p>
+            <div class="flex flex-wrap items-center gap-2 text-xs" style="line-height: normal; margin-top: 4px">
               <button
                 type="button"
                 class="text-mist hover:text-ink disabled:opacity-30"
@@ -197,7 +196,7 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
               <button type="button" class="text-flare hover:underline" @click="removeItem(item.id)">Remove</button>
             </div>
           </div>
-        </PosterGrid>
+        </div>
       </section>
     </div>
   </div>

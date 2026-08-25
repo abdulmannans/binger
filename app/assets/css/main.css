@@ -47,20 +47,19 @@ select {
   letter-spacing: -0.02em;
 }
 
-@layer components {
-  .poster-grid {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 12px !important;
-    align-items: flex-start;
-  }
-
-  .poster-grid > * {
-    flex: 0 0 140px !important;
-    width: 140px !important;
-    max-width: 140px !important;
-    min-width: 140px !important;
-    box-sizing: border-box;
-  }
+/* Poster shelf — unlayered so nothing in Tailwind can override */
+.bw-shelf {
+  display: block !important;
+  width: 100% !important;
+  line-height: 0;
+}
+.bw-tile {
+  display: inline-block !important;
+  vertical-align: top !important;
+  width: 140px !important;
+  max-width: 140px !important;
+  min-width: 140px !important;
+  margin: 0 12px 12px 0 !important;
+  box-sizing: border-box !important;
 }
 
