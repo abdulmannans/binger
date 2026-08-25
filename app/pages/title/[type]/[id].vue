@@ -163,7 +163,10 @@ async function onAdded() {
         </div>
         <p class="text-sm text-mist">{{ recommendations.length }}</p>
       </div>
-      <div class="poster-grid">
+      <div
+        class="poster-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fill, minmax(7.5rem, 1fr)); gap: 0.75rem"
+      >
         <PosterCard
           v-for="card in recommendations"
           :key="`${card.mediaType}-${card.tmdbId}`"

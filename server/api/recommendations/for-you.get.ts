@@ -8,7 +8,8 @@ export default defineEventHandler(async (event) => {
 
   const watched = items.filter(item => item.status === 'watched')
   const want = items.filter(item => item.status === 'want' || item.status === 'watching')
-  const seeds = (watched.length ? watched : want).slice(0, 5)
+  const unsorted = items.filter(item => !item.status)
+  const seeds = (watched.length ? watched : want.length ? want : unsorted).slice(0, 5)
 
   if (!seeds.length) {
     return { results: [] as TitleCard[] }

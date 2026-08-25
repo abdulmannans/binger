@@ -47,27 +47,29 @@ select {
   letter-spacing: -0.02em;
 }
 
-/* Reliable poster tiling — do not rely on responsive grid-cols utilities alone */
-.poster-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(7.25rem, 1fr));
-  gap: 0.75rem;
-}
-
-@media (min-width: 640px) {
+/* Reliable poster tiling — @layer so Tailwind v4 always emits it */
+@layer components {
   .poster-grid {
-    grid-template-columns: repeat(auto-fill, minmax(8.25rem, 1fr));
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(7.25rem, 1fr));
+    gap: 0.75rem;
   }
-}
 
-@media (min-width: 1024px) {
-  .poster-grid {
-    grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+  @media (min-width: 640px) {
+    .poster-grid {
+      grid-template-columns: repeat(auto-fill, minmax(8.25rem, 1fr));
+    }
   }
-}
 
-.poster-grid > * {
-  min-width: 0;
-  max-width: 100%;
+  @media (min-width: 1024px) {
+    .poster-grid {
+      grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+    }
+  }
+
+  .poster-grid > * {
+    min-width: 0;
+    max-width: 100%;
+  }
 }
 
