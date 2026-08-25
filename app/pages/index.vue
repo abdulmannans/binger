@@ -94,7 +94,12 @@ if (discoverError.value && !error.value) {
   error.value = apiError(discoverError.value)
 }
 
-await Promise.all([loadLibraryKeys(), loadGenres('movie'), loadForYou()])
+// Keys + genres can load with SSR; for-you is deferred off the critical path
+await Promise.all([loadLibraryKeys(), loadGenres('movie')])
+
+onMounted(() => {
+  loadForYou()
+})
 
 async function loadCatalog(nextTab: DiscoverTab, nextPage = 1, append = false) {
   if (!append) {

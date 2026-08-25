@@ -18,17 +18,37 @@ const { data: library, refresh: refreshLibrary } = await useFetch<{ items: (Libr
   { query: { tmdbId: id, mediaType: type } },
 )
 
-const { data: recs } = await useFetch<{ results: TitleCard[] }>(
-  () => `/api/titles/${type.value}/${id.value}/recommendations`,
-  { default: () => ({ results: [] }) },
-)
-
 const { data: keysData, refresh: refreshKeys } = await useFetch<{ keys: string[] }>('/api/library/keys', {
   default: () => ({ keys: [] }),
 })
 
+const recommendations = ref<TitleCard[]>([])
+const recsLoading = ref(true)
+
+async function loadRecommendations() {
+  recsLoading.value = true
+  recommendations.value = []
+  try {
+    const data = await $fetch<{ results: TitleCard[] }>(`/api/titles/${type.value}/${id.value}/recommendations`)
+    recommendations.value = data.results
+  }
+  catch {
+    recommendations.value = []
+  }
+  finally {
+    recsLoading.value = false
+  }
+}
+
+onMounted(() => {
+  loadRecommendations()
+})
+
+watch([type, id], () => {
+  if (import.meta.client) loadRecommendations()
+})
+
 const memberships = computed(() => library.value?.items ?? [])
-const recommendations = computed(() => recs.value?.results ?? [])
 const libraryKeys = computed(() => new Set(keysData.value?.keys ?? []))
 const adding = ref(false)
 const addingRec = ref<TitleCard | null>(null)
@@ -155,15 +175,23 @@ async function onAdded() {
       </div>
     </section>
 
-    <section v-if="recommendations.length" class="mt-14">
+    <section v-if="recsLoading || recommendations.length" class="mt-14">
       <div class="mb-5 flex items-end justify-between">
         <div>
           <p class="text-sm text-mist">Because you opened this</p>
           <h2 class="font-display text-2xl font-medium tracking-tight">More like this</h2>
         </div>
-        <p class="text-sm text-mist">{{ recommendations.length }}</p>
+        <p class="text-sm text-mist">{{ recsLoading ? '…' : recommendations.length }}</p>
       </div>
-      <div class="bw-shelf">
+      <div v-if="recsLoading" class="bw-shelf">
+        <div
+          v-for="n in 8"
+          :key="n"
+          class="bw-tile animate-pulse rounded-lg bg-panel-2"
+          style="height: 210px"
+        />
+      </div>
+      <div v-else class="bw-shelf">
         <PosterCard
           v-for="card in recommendations"
           :key="`${card.mediaType}-${card.tmdbId}`"

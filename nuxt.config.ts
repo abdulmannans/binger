@@ -29,9 +29,14 @@ export default defineNuxtConfig({
         { rel: 'preconnect', href: 'https://fonts.gstatic.com', crossorigin: 'anonymous' },
         {
           rel: 'stylesheet',
-          href: 'https://fonts.googleapis.com/css2?family=Figtree:wght@300;400;500;600;700&family=Syne:wght@400;500;600;700&display=swap',
+          href: 'https://fonts.googleapis.com/css2?family=Figtree:wght@400;600&family=Syne:wght@500;600&display=swap',
         },
       ],
+    },
+  },
+  nitro: {
+    routeRules: {
+      '/_nuxt/**': { headers: { 'cache-control': 'public, max-age=31536000, immutable' } },
     },
   },
 })

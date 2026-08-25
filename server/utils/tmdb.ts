@@ -231,20 +231,11 @@ export function parseMediaType(value: unknown): MediaType {
 }
 
 async function enrichCards(entries: { item: TmdbSearchResult, mediaType: MediaType }[]): Promise<TitleCard[]> {
-  const slice = entries.slice(0, 12)
-  const rest = entries.slice(12)
-  const enriched = await Promise.all(slice.map(async ({ item, mediaType }) => {
-    const [imdb, genres] = await Promise.all([
-      getImdbForTmdb(mediaType, item.id),
-      namesForGenreIds(mediaType, item.genre_ids),
-    ])
-    return toCard(item, mediaType, imdb, genres)
-  }))
-  const plain = await Promise.all(rest.map(async ({ item, mediaType }) => {
+  // Shelf cards: TMDB vote + genre names only — no OMDb/external_ids N+1
+  return Promise.all(entries.map(async ({ item, mediaType }) => {
     const genres = await namesForGenreIds(mediaType, item.genre_ids)
     return toCard(item, mediaType, undefined, genres)
   }))
-  return [...enriched, ...plain]
 }
 
 export async function getTitleDetails(mediaType: MediaType, tmdbId: number): Promise<TitleDetails> {
