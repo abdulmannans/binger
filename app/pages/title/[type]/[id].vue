@@ -163,7 +163,7 @@ async function onAdded() {
         </div>
         <p class="text-sm text-mist">{{ recommendations.length }}</p>
       </div>
-      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
         <PosterCard
           v-for="card in recommendations"
           :key="`${card.mediaType}-${card.tmdbId}`"

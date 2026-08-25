@@ -157,8 +157,8 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
           <h2 class="font-display text-2xl font-medium tracking-tight">{{ section.label }}</h2>
           <p class="text-sm text-mist">{{ section.items.length }}</p>
         </div>
-        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-          <div v-for="(item, index) in section.items" :key="item.id" class="space-y-2">
+        <div class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+          <div v-for="(item, index) in section.items" :key="item.id" class="min-w-0 space-y-2">
             <PosterCard
               compact
               :order="index + 1"

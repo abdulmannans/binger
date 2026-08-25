@@ -250,15 +250,15 @@ function onAdded(title: TitleCard) {
         </div>
         <p class="text-sm text-mist">{{ forYou.length }}</p>
       </div>
-      <div v-if="forYouLoading" class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-        <div v-for="n in 6" :key="n" class="aspect-[2/3] animate-pulse rounded-lg bg-panel-2" />
+      <div v-if="forYouLoading" class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
+        <div v-for="n in 8" :key="n" class="animate-pulse rounded-lg bg-panel-2" style="aspect-ratio: 2 / 3" />
       </div>
       <EmptyState
         v-else-if="!forYou.length"
         title="No recommendations yet"
         body="Add a few titles and mark them Want or Watched — we will pull similar picks from TMDB."
       />
-      <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      <div v-else class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
         <PosterCard
           v-for="title in forYou"
           :key="`fy-${title.mediaType}-${title.tmdbId}`"
@@ -282,8 +282,8 @@ function onAdded(title: TitleCard) {
         <p class="text-sm text-mist">{{ grid.length }}</p>
       </div>
 
-      <div v-if="catalogLoading && !showingSearch" class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-        <div v-for="n in 12" :key="n" class="aspect-[2/3] animate-pulse rounded-lg bg-panel-2" />
+      <div v-if="catalogLoading && !showingSearch" class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+        <div v-for="n in 14" :key="n" class="animate-pulse rounded-lg bg-panel-2" style="aspect-ratio: 2 / 3" />
       </div>
 
       <EmptyState
@@ -292,7 +292,7 @@ function onAdded(title: TitleCard) {
         body="Try another title, or switch between the movie name and the series name."
       />
 
-      <div v-else class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+      <div v-else class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
         <PosterCard
           v-for="title in grid"
           :key="`${title.mediaType}-${title.tmdbId}`"
