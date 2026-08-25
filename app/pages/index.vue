@@ -250,7 +250,7 @@ function onAdded(title: TitleCard) {
         </div>
         <p class="text-sm text-mist">{{ forYou.length }}</p>
       </div>
-      <div v-if="forYouLoading" class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
+      <div v-if="forYouLoading" class="poster-grid">
         <div v-for="n in 8" :key="n" class="animate-pulse rounded-lg bg-panel-2" style="aspect-ratio: 2 / 3" />
       </div>
       <EmptyState
@@ -258,7 +258,7 @@ function onAdded(title: TitleCard) {
         title="No recommendations yet"
         body="Add a few titles and mark them Want or Watched — we will pull similar picks from TMDB."
       />
-      <div v-else class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-8">
+      <div v-else class="poster-grid">
         <PosterCard
           v-for="title in forYou"
           :key="`fy-${title.mediaType}-${title.tmdbId}`"
@@ -282,7 +282,7 @@ function onAdded(title: TitleCard) {
         <p class="text-sm text-mist">{{ grid.length }}</p>
       </div>
 
-      <div v-if="catalogLoading && !showingSearch" class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+      <div v-if="catalogLoading && !showingSearch" class="poster-grid">
         <div v-for="n in 14" :key="n" class="animate-pulse rounded-lg bg-panel-2" style="aspect-ratio: 2 / 3" />
       </div>
 
@@ -292,7 +292,7 @@ function onAdded(title: TitleCard) {
         body="Try another title, or switch between the movie name and the series name."
       />
 
-      <div v-else class="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7">
+      <div v-else class="poster-grid">
         <PosterCard
           v-for="title in grid"
           :key="`${title.mediaType}-${title.tmdbId}`"

@@ -30,16 +30,18 @@ const genreLine = computed(() => (props.genres ?? []).slice(0, 2).join(' · '))
 </script>
 
 <template>
-  <article class="group relative min-w-0 w-full">
+  <article class="group relative min-w-0">
     <NuxtLink
       :to="href"
       class="block overflow-hidden rounded-lg bg-panel ring-1 ring-line transition duration-300 hover:-translate-y-0.5 hover:ring-ink/20"
     >
-      <div class="relative w-full overflow-hidden bg-panel-2" style="aspect-ratio: 2 / 3">
+      <div class="relative overflow-hidden bg-panel-2" style="aspect-ratio: 2 / 3; width: 100%">
         <img
           v-if="src"
           :src="src"
           :alt="title"
+          width="342"
+          height="513"
           class="absolute inset-0 h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
           loading="lazy"
         >
