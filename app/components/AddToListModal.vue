@@ -94,14 +94,14 @@ async function addToList() {
 </script>
 
 <template>
-  <div class="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-4 sm:items-center" @click.self="emit('close')">
-    <div class="w-full max-w-md rounded-2xl border border-line bg-panel p-5 shadow-2xl">
-      <div class="mb-4 flex items-start justify-between gap-3">
+  <div class="fixed inset-0 z-50 flex items-end justify-center bg-ink/40 p-4 sm:items-center" @click.self="emit('close')">
+    <div class="w-full max-w-md rounded-xl border border-line bg-panel p-6 shadow-lg">
+      <div class="mb-5 flex items-start justify-between gap-3">
         <div>
-          <p class="text-xs uppercase tracking-widest text-gold">Add to list</p>
-          <h2 class="mt-1 text-lg font-semibold">{{ title }}</h2>
+          <p class="text-xs text-mist">Add to list</p>
+          <h2 class="mt-1 font-display text-xl font-medium tracking-tight">{{ title }}</h2>
         </div>
-        <button type="button" class="text-mist hover:text-paper" @click="emit('close')">✕</button>
+        <button type="button" class="text-mist hover:text-ink" @click="emit('close')">✕</button>
       </div>
 
       <p v-if="loading" class="text-sm text-mist">Loading lists…</p>
@@ -111,20 +111,20 @@ async function addToList() {
         <label
           v-for="list in lists"
           :key="list.id"
-          class="flex items-center gap-3 rounded-xl border px-3 py-2 transition"
+          class="flex items-center gap-3 rounded-lg border px-3 py-2.5 transition"
           :class="[
             membershipListIds.has(list.id)
-              ? 'cursor-not-allowed border-line/60 opacity-60'
+              ? 'cursor-not-allowed border-line opacity-55'
               : selectedId === list.id
-                ? 'cursor-pointer border-gold bg-gold/10'
-                : 'cursor-pointer border-line hover:border-mist',
+                ? 'cursor-pointer border-accent bg-accent/5'
+                : 'cursor-pointer border-line hover:border-ink/25',
           ]"
         >
           <input
             v-model="selectedId"
             type="radio"
             :value="list.id"
-            class="accent-gold"
+            class="accent-accent"
             :disabled="membershipListIds.has(list.id)"
           >
           <span class="flex-1">
@@ -142,11 +142,11 @@ async function addToList() {
           v-model="newName"
           type="text"
           placeholder="New list name"
-          class="flex-1 rounded-xl border border-line bg-ink px-3 py-2 text-sm outline-none ring-gold/40 placeholder:text-mist/70 focus:ring-2"
+          class="flex-1 rounded-lg border border-line bg-canvas px-3 py-2 text-sm outline-none ring-accent/30 placeholder:text-mist/70 focus:ring-2"
         >
         <button
           type="submit"
-          class="rounded-xl bg-panel-2 px-3 py-2 text-sm text-paper disabled:opacity-50"
+          class="rounded-lg border border-line px-3 py-2 text-sm text-ink disabled:opacity-50"
           :disabled="creating || !newName.trim()"
         >
           Create
@@ -157,7 +157,7 @@ async function addToList() {
 
       <button
         type="button"
-        class="w-full rounded-xl bg-gold py-2.5 text-sm font-semibold text-ink disabled:opacity-50"
+        class="w-full rounded-lg bg-ink py-2.5 text-sm font-medium text-panel disabled:opacity-50"
         :disabled="saving || loading || !selectedId || membershipListIds.has(selectedId)"
         @click="addToList"
       >

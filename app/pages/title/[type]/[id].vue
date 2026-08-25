@@ -70,38 +70,38 @@ async function onAdded() {
 
 <template>
   <div v-if="title">
-    <div class="relative -mx-4 mb-8 overflow-hidden sm:-mx-6">
+    <div class="relative -mx-4 mb-10 overflow-hidden sm:-mx-6">
       <div class="absolute inset-0">
-        <img v-if="backdrop" :src="backdrop" :alt="title.title" class="h-full w-full object-cover opacity-35">
-        <div class="absolute inset-0 bg-gradient-to-t from-ink via-ink/80 to-ink/40" />
+        <img v-if="backdrop" :src="backdrop" :alt="title.title" class="h-full w-full object-cover opacity-25">
+        <div class="absolute inset-0 bg-gradient-to-t from-canvas via-canvas/85 to-canvas/50" />
       </div>
-      <div class="relative mx-auto flex max-w-7xl flex-col gap-8 px-4 py-10 sm:flex-row sm:px-6">
+      <div class="relative mx-auto flex max-w-6xl flex-col gap-8 px-4 py-10 sm:flex-row sm:px-6">
         <img
           v-if="posterUrl(title.posterPath)"
           :src="posterUrl(title.posterPath) ?? undefined"
           :alt="title.title"
-          class="w-48 shrink-0 rounded-xl shadow-2xl ring-1 ring-white/10 sm:w-56"
+          class="w-44 shrink-0 rounded-lg shadow-md ring-1 ring-line sm:w-52"
         >
         <div class="flex-1">
-          <p class="text-xs uppercase tracking-[0.25em] text-gold">
+          <p class="text-sm text-mist">
             {{ title.mediaType === 'tv' ? 'Series' : 'Movie' }}
             <span v-if="title.year"> · {{ title.year }}</span>
           </p>
-          <h1 class="mt-1 font-display text-6xl leading-none sm:text-7xl">{{ title.title }}</h1>
+          <h1 class="mt-1 font-display text-4xl font-medium leading-tight tracking-tight sm:text-5xl">{{ title.title }}</h1>
           <p v-if="title.tagline" class="mt-3 italic text-mist">{{ title.tagline }}</p>
-          <div class="mt-5 flex flex-wrap gap-3 text-sm">
-            <span class="rounded-md bg-gold px-2 py-1 font-semibold text-ink">
+          <div class="mt-5 flex flex-wrap gap-2 text-sm">
+            <span class="rounded bg-accent px-2 py-1 font-medium text-white">
               IMDb {{ title.imdbRating || '—' }}
             </span>
-            <span v-if="title.tmdbRating" class="rounded-md bg-panel px-2 py-1">TMDB {{ title.tmdbRating }}</span>
-            <span v-if="title.runtime" class="rounded-md bg-panel px-2 py-1">{{ title.runtime }} min</span>
-            <span v-if="title.seasons" class="rounded-md bg-panel px-2 py-1">{{ title.seasons }} season{{ title.seasons === 1 ? '' : 's' }}</span>
+            <span v-if="title.tmdbRating" class="rounded bg-panel ring-1 ring-line px-2 py-1">TMDB {{ title.tmdbRating }}</span>
+            <span v-if="title.runtime" class="rounded bg-panel ring-1 ring-line px-2 py-1">{{ title.runtime }} min</span>
+            <span v-if="title.seasons" class="rounded bg-panel ring-1 ring-line px-2 py-1">{{ title.seasons }} season{{ title.seasons === 1 ? '' : 's' }}</span>
           </div>
           <p class="mt-3 text-sm text-mist">{{ title.genres.join(' · ') }}</p>
-          <p class="mt-5 max-w-2xl leading-relaxed text-paper/90">{{ title.overview }}</p>
+          <p class="mt-5 max-w-2xl leading-relaxed text-ink/90">{{ title.overview }}</p>
           <button
             type="button"
-            class="mt-6 rounded-full bg-gold px-5 py-2 font-semibold text-ink"
+            class="mt-6 rounded-lg bg-ink px-4 py-2 text-sm font-medium text-panel"
             @click="adding = true"
           >
             Add to a list
@@ -111,42 +111,42 @@ async function onAdded() {
     </div>
 
     <section>
-      <h2 class="font-display text-3xl">Your take</h2>
+      <h2 class="font-display text-2xl font-medium tracking-tight">Your take</h2>
       <p v-if="!memberships.length" class="mt-2 text-sm text-mist">Add this title to a list to rate it, set a watch status, and leave notes.</p>
 
-      <div v-else class="mt-4 grid gap-4 lg:grid-cols-2">
+      <div v-else class="mt-5 grid gap-4 lg:grid-cols-2">
         <article
           v-for="item in memberships"
           :key="item.id"
-          class="rounded-2xl border border-line bg-panel p-5"
+          class="rounded-xl border border-line bg-panel p-5"
         >
           <div class="flex items-start justify-between gap-3">
             <div>
-              <p class="text-xs uppercase tracking-wider text-gold">On list</p>
-              <NuxtLink :to="`/lists/${item.listId}`" class="text-lg font-semibold hover:text-gold">{{ item.listName }}</NuxtLink>
+              <p class="text-xs text-mist">On list</p>
+              <NuxtLink :to="`/lists/${item.listId}`" class="text-lg font-medium hover:text-accent">{{ item.listName }}</NuxtLink>
             </div>
             <button type="button" class="text-xs text-flare hover:underline" @click="removeFromList(item.id)">Remove</button>
           </div>
 
-          <p class="mt-4 text-xs uppercase tracking-wider text-mist">Your rating</p>
+          <p class="mt-4 text-xs text-mist">Your rating</p>
           <StarRating
             class="mt-2"
             :model-value="item.userRating"
             @update:model-value="(value) => patchItem(item, { userRating: value })"
           />
 
-          <p class="mt-4 text-xs uppercase tracking-wider text-mist">Status</p>
+          <p class="mt-4 text-xs text-mist">Status</p>
           <StatusPills
             class="mt-2"
             :model-value="item.status"
             @update:model-value="(value) => patchItem(item, { status: value })"
           />
 
-          <p class="mt-4 text-xs uppercase tracking-wider text-mist">Notes</p>
+          <p class="mt-4 text-xs text-mist">Notes</p>
           <textarea
             :value="item.notes"
             rows="4"
-            class="mt-2 w-full rounded-xl border border-line bg-ink px-3 py-2 text-sm outline-none ring-gold/40 focus:ring-2"
+            class="mt-2 w-full rounded-lg border border-line bg-canvas px-3 py-2 text-sm outline-none ring-accent/30 focus:ring-2"
             placeholder="What did you think? Where did you watch it?"
             @change="(e) => patchItem(item, { notes: (e.target as HTMLTextAreaElement).value })"
           />
@@ -155,13 +155,13 @@ async function onAdded() {
       </div>
     </section>
 
-    <section v-if="recommendations.length" class="mt-12">
-      <div class="mb-4 flex items-end justify-between">
+    <section v-if="recommendations.length" class="mt-14">
+      <div class="mb-5 flex items-end justify-between">
         <div>
-          <p class="text-xs uppercase tracking-[0.25em] text-gold">Because you opened this</p>
-          <h2 class="font-display text-3xl">More like this</h2>
+          <p class="text-sm text-mist">Because you opened this</p>
+          <h2 class="font-display text-2xl font-medium tracking-tight">More like this</h2>
         </div>
-        <p class="text-sm text-mist">{{ recommendations.length }} titles</p>
+        <p class="text-sm text-mist">{{ recommendations.length }}</p>
       </div>
       <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
         <PosterCard
@@ -199,6 +199,6 @@ async function onAdded() {
     />
   </div>
   <EmptyState v-else-if="titleError" title="Title not found" body="TMDB did not return this movie or series.">
-    <NuxtLink to="/" class="text-gold hover:underline">Back to discover</NuxtLink>
+    <NuxtLink to="/" class="text-accent hover:underline">Back to discover</NuxtLink>
   </EmptyState>
 </template>

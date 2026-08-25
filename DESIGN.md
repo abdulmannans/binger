@@ -1,43 +1,54 @@
 # BingeWatcher design
 
-Cinema-dark watchlist product. Keep this document in sync when changing visual tokens.
+Light minimal personal library. Keep this document in sync when changing visual tokens.
 
 ## Product
 
 - Audience: people tracking movies and series they want / are / have watched
-- Voice: direct, warm, low-noise — no franchise catalog clutter
-- Surfaces: Discover, Lists, Title detail
+- Voice: quiet, direct, letterboxd-lite — personal library, not a cinema marquee
+- Surfaces: Discover, Lists, Title detail, Auth
 
 ## Brand & type
 
-- Display: **Bebas Neue** (`font-display`) — page titles, section heads
-- Body: **Outfit** — UI copy, meta, forms
-- Do not switch to Inter, Roboto, system-ui as primary, or generic SaaS stacks
+- Display / wordmark: **Syne** (`font-display`) — modest size, medium weight
+- Body / UI: **Figtree** — clean reading and controls
+- Wordmark sits at ~`text-xl`–`text-2xl`, not oversized display shouting
+- Do not use Inter, Roboto, Bebas Neue, or system-ui as primary
 
 ## Color tokens (`app/assets/css/main.css`)
 
 | Token | Hex | Role |
 |-------|-----|------|
-| `ink` | `#0b0b0f` | Page background |
-| `panel` / `panel-2` | `#16161f` / `#1e1e2a` | Surfaces |
-| `line` | `#2a2a3a` | Borders |
-| `gold` | `#f5c518` | Accent / CTA / eyebrows |
-| `flare` | `#e11d48` | Destructive / alert |
-| `mist` | `#9a9aaf` | Secondary text |
-| `paper` | `#f4f1ea` | Primary text |
+| `canvas` | `#f5f5f3` | Page ground (+ soft radial wash) |
+| `panel` / `panel-2` | `#ffffff` / `#ecece8` | Surfaces / muted fills |
+| `ink` | `#161616` | Primary text and solid CTAs |
+| `mist` | `#6e6e6e` | Secondary text |
+| `line` | `#e4e4e0` | Hairline borders |
+| `accent` / `gold` | `#3d6b5a` | Active chips, focus, emphasis only |
+| `flare` | `#b42318` | Destructive |
+
+CTAs are **ink on panel** (near-black buttons). Accent is for selection and focus, not every button.
 
 ## Layout patterns
 
-- Sticky header with backdrop blur; content `max-w-7xl`
+- Sticky light header; content `max-w-6xl`
+- Nav: underline/weight for active — not pill fills
 - Poster grids: `grid-cols-2 … lg:grid-cols-6`
-- Genre filters: horizontal chips, gold when active — not nested cards
-- Status sections on lists: Watching → Want → Watched → Unsorted
-- Recs rows: same poster language as Discover; checkmark when already in library
+- Genre chips: soft outline; accent when active
+- List status sections: Watching → Want → Watched → Unsorted
+- Empty states: open hairline sections, not dashed dark panels
+- In-library: checkmark in accent; add `+` is ink circle
+
+## Motion
+
+- Poster hover lift (~0.5)
+- Chip / tab active transitions
+- Header soft backdrop blur
 
 ## Anti-patterns
 
+- No cinema-dark / IMDb gold UI
 - No purple/indigo SaaS gradients
-- No Inter-only typography
-- No universe/franchise hub in nav or Discover
-- No surprise 409 on add — show in-library state on `+` first
-- Prefer one job per section; avoid dashboard clutter on Discover hero
+- No Inter-only stacks; no shouty condensed display
+- No nested cards in hero; prefer open sections
+- No surprise 409 on add — show in-library state first

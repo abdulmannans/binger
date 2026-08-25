@@ -14,8 +14,8 @@ function pick(value: number) {
       v-for="n in stars"
       :key="n"
       type="button"
-      class="flex h-8 w-8 items-center justify-center rounded-md text-sm font-semibold transition"
-      :class="model != null && n <= model ? 'bg-gold text-ink' : 'bg-panel-2 text-mist hover:bg-line hover:text-paper'"
+      class="flex h-8 w-8 items-center justify-center rounded text-sm font-medium transition"
+      :class="model != null && n <= model ? 'bg-accent text-white' : 'bg-panel-2 text-mist hover:bg-line hover:text-ink'"
       :title="`${n} / 10`"
       @click="pick(n)"
     >
@@ -24,7 +24,7 @@ function pick(value: number) {
     <button
       v-if="model != null"
       type="button"
-      class="ml-1 text-xs text-mist underline-offset-2 hover:text-paper hover:underline"
+      class="ml-1 text-xs text-mist underline-offset-2 hover:text-ink hover:underline"
       @click="model = null"
     >
       Clear

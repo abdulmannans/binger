@@ -189,30 +189,30 @@ function onAdded(title: TitleCard) {
 
 <template>
   <div>
-    <section class="mb-10">
-      <p class="text-xs uppercase tracking-[0.25em] text-gold">Library</p>
-      <h1 class="font-display text-6xl sm:text-7xl">What are we watching?</h1>
-      <p class="mt-2 max-w-xl text-mist">
+    <section class="mb-12">
+      <p class="text-sm text-mist">Discover</p>
+      <h1 class="mt-1 font-display text-4xl font-medium tracking-tight sm:text-5xl">What are we watching?</h1>
+      <p class="mt-3 max-w-xl text-mist">
         Browse movies, series, and anime — filter by genre, then save titles to your lists.
       </p>
 
-      <div class="relative mt-8 max-w-2xl">
+      <div class="relative mt-8 max-w-xl">
         <input
           v-model="query"
           type="search"
           placeholder="Search titles — The Bear, Heat, Dune…"
-          class="w-full rounded-2xl border border-line bg-panel px-5 py-4 text-lg outline-none ring-gold/30 placeholder:text-mist/60 focus:ring-2"
+          class="w-full rounded-lg border border-line bg-panel px-4 py-3 text-base outline-none ring-accent/25 placeholder:text-mist/60 focus:ring-2"
         >
         <p v-if="loading" class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-mist">Searching…</p>
       </div>
 
-      <div class="mt-5 flex flex-wrap gap-1 border-b border-line pb-px">
+      <div class="mt-6 flex flex-wrap gap-5 border-b border-line">
         <button
           v-for="item in tabs"
           :key="item.id"
           type="button"
-          class="-mb-px border-b-2 px-4 py-2 text-sm font-medium transition"
-          :class="tab === item.id ? 'border-gold text-gold' : 'border-transparent text-mist hover:text-paper'"
+          class="-mb-px border-b-2 pb-2.5 text-sm transition"
+          :class="tab === item.id ? 'border-ink font-medium text-ink' : 'border-transparent text-mist hover:text-ink'"
           @click="setTab(item.id)"
         >
           {{ item.label }}
@@ -223,7 +223,7 @@ function onAdded(title: TitleCard) {
         <button
           type="button"
           class="shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition"
-          :class="genreId == null ? 'border-gold bg-gold/15 text-gold' : 'border-line text-mist hover:border-mist hover:text-paper'"
+          :class="genreId == null ? 'border-accent bg-accent/10 text-accent' : 'border-line text-mist hover:border-ink/25 hover:text-ink'"
           @click="setGenre(null)"
         >
           All
@@ -233,7 +233,7 @@ function onAdded(title: TitleCard) {
           :key="genre.id"
           type="button"
           class="shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition"
-          :class="genreId === genre.id ? 'border-gold bg-gold/15 text-gold' : 'border-line text-mist hover:border-mist hover:text-paper'"
+          :class="genreId === genre.id ? 'border-accent bg-accent/10 text-accent' : 'border-line text-mist hover:border-ink/25 hover:text-ink'"
           @click="setGenre(genre.id)"
         >
           {{ genre.name }}
@@ -242,16 +242,16 @@ function onAdded(title: TitleCard) {
       <p v-if="error" class="mt-3 text-sm text-flare">{{ error }}</p>
     </section>
 
-    <section v-if="!showingSearch" class="mb-12">
-      <div class="mb-4 flex items-end justify-between">
+    <section v-if="!showingSearch" class="mb-14">
+      <div class="mb-5 flex items-end justify-between">
         <div>
-          <p class="text-xs uppercase tracking-[0.25em] text-gold">Picks</p>
-          <h2 class="font-display text-3xl">For you</h2>
+          <p class="text-sm text-mist">Picks</p>
+          <h2 class="font-display text-2xl font-medium tracking-tight">For you</h2>
         </div>
-        <p class="text-sm text-mist">{{ forYou.length }} titles</p>
+        <p class="text-sm text-mist">{{ forYou.length }}</p>
       </div>
       <div v-if="forYouLoading" class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-        <div v-for="n in 6" :key="n" class="aspect-[2/3] animate-pulse rounded-xl bg-panel" />
+        <div v-for="n in 6" :key="n" class="aspect-[2/3] animate-pulse rounded-lg bg-panel-2" />
       </div>
       <EmptyState
         v-else-if="!forYou.length"
@@ -277,13 +277,13 @@ function onAdded(title: TitleCard) {
     </section>
 
     <section>
-      <div class="mb-4 flex items-end justify-between">
-        <h2 class="font-display text-3xl">{{ heading }}</h2>
-        <p class="text-sm text-mist">{{ grid.length }} titles</p>
+      <div class="mb-5 flex items-end justify-between">
+        <h2 class="font-display text-2xl font-medium tracking-tight">{{ heading }}</h2>
+        <p class="text-sm text-mist">{{ grid.length }}</p>
       </div>
 
       <div v-if="catalogLoading && !showingSearch" class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-        <div v-for="n in 12" :key="n" class="aspect-[2/3] animate-pulse rounded-xl bg-panel" />
+        <div v-for="n in 12" :key="n" class="aspect-[2/3] animate-pulse rounded-lg bg-panel-2" />
       </div>
 
       <EmptyState
@@ -309,10 +309,10 @@ function onAdded(title: TitleCard) {
         />
       </div>
 
-      <div v-if="!showingSearch && page < totalPages" class="mt-8 flex justify-center">
+      <div v-if="!showingSearch && page < totalPages" class="mt-10 flex justify-center">
         <button
           type="button"
-          class="rounded-full border border-line px-5 py-2 text-sm text-mist hover:border-gold hover:text-gold"
+          class="rounded-lg border border-line px-5 py-2 text-sm text-mist transition hover:border-ink hover:text-ink"
           :disabled="loadingMore"
           @click="loadCatalog(tab, page + 1, true)"
         >

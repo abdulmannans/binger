@@ -1,5 +1,5 @@
 ---
-description: BingeWatcher UI/UX — cinema tokens, typography, anti-slop
+description: BingeWatcher UI/UX — light minimal personal library
 globs: app/**/*.{vue,css}
 alwaysApply: false
 ---
@@ -9,17 +9,19 @@ alwaysApply: false
 Read `DESIGN.md` for the source of truth. When editing Vue/CSS:
 
 ## Must keep
-- Fonts: Bebas Neue (display), Outfit (body) — never Inter/Roboto/system as primary
-- Palette: ink / panel / gold / mist / paper / flare from `app/assets/css/main.css`
-- Brand-first Discover hero: product name + one headline + short support + search — not a dashboard
+- Fonts: Syne (display/wordmark), Figtree (body) — never Inter/Roboto/Bebas as primary
+- Light canvas `#f5f5f3`, ink CTAs, quiet green accent `#3d6b5a`
+- Soft wordmark — modest Syne, not oversized marquee titles
+- Brand-first but calm Discover: short label + headline + support + search
 
 ## Patterns
-- Genre chips: horizontal scroll, gold active state
-- List detail: group by Watching / Want / Watched / Unsorted
-- Poster `+` becomes check when title is already in any list
+- Genre chips: outline, accent when active
+- List detail: Watching / Want / Watched / Unsorted with typography-led headers
+- Poster `+` (ink) → check (accent) when already in a list
 - Recommendations use the same `PosterCard` grid language
+- Hairline borders, more whitespace, `max-w-6xl`
 
 ## Avoid
-- Purple/indigo gradients, nested cards in hero, universe/franchise nav
-- Generic AI SaaS look; bounce easings; gray text on colored backgrounds
-- Surprising errors for “already added” — surface membership before submit
+- Dark cinema theme, gold IMDb accents, purple SaaS gradients
+- Nested cards, pill-heavy nav, shouty uppercase gold eyebrows
+- Surprising “already added” errors — surface membership first

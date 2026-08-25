@@ -115,27 +115,27 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
 
 <template>
   <div v-if="list">
-    <NuxtLink to="/lists" class="text-sm text-mist hover:text-gold">← All lists</NuxtLink>
+    <NuxtLink to="/lists" class="text-sm text-mist transition hover:text-ink">← All lists</NuxtLink>
 
-    <div class="mt-4 flex flex-wrap items-start justify-between gap-4">
+    <div class="mt-5 flex flex-wrap items-start justify-between gap-4">
       <div class="flex-1">
         <template v-if="!editing">
-          <h1 class="font-display text-6xl">{{ list.name }}</h1>
+          <h1 class="font-display text-4xl font-medium tracking-tight sm:text-5xl">{{ list.name }}</h1>
           <p class="mt-2 max-w-2xl text-mist">{{ list.description || 'No description yet.' }}</p>
         </template>
         <form v-else class="max-w-xl space-y-3" @submit.prevent="saveMeta">
-          <input v-model="name" required class="w-full rounded-xl border border-line bg-panel px-3 py-2 outline-none ring-gold/40 focus:ring-2">
-          <textarea v-model="description" rows="3" class="w-full rounded-xl border border-line bg-panel px-3 py-2 outline-none ring-gold/40 focus:ring-2" />
+          <input v-model="name" required class="w-full rounded-lg border border-line bg-panel px-3 py-2 outline-none ring-accent/30 focus:ring-2">
+          <textarea v-model="description" rows="3" class="w-full rounded-lg border border-line bg-panel px-3 py-2 outline-none ring-accent/30 focus:ring-2" />
           <div class="flex gap-2">
-            <button type="submit" class="rounded-xl bg-gold px-4 py-2 text-sm font-semibold text-ink" :disabled="saving">Save</button>
-            <button type="button" class="rounded-xl px-4 py-2 text-sm text-mist" @click="editing = false">Cancel</button>
+            <button type="submit" class="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-panel" :disabled="saving">Save</button>
+            <button type="button" class="rounded-lg px-4 py-2 text-sm text-mist" @click="editing = false">Cancel</button>
           </div>
         </form>
         <p class="mt-3 text-sm text-mist">{{ list.items.length }} title{{ list.items.length === 1 ? '' : 's' }} · grouped by watch status</p>
       </div>
       <div class="flex gap-2">
-        <button type="button" class="rounded-full border border-line px-4 py-2 text-sm" @click="editing = true">Rename</button>
-        <button type="button" class="rounded-full border border-flare/40 px-4 py-2 text-sm text-flare" :disabled="deleting" @click="removeList">
+        <button type="button" class="rounded-lg border border-line px-4 py-2 text-sm" @click="editing = true">Rename</button>
+        <button type="button" class="rounded-lg border border-flare/30 px-4 py-2 text-sm text-flare" :disabled="deleting" @click="removeList">
           Delete
         </button>
       </div>
@@ -148,13 +148,13 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
       title="This list is empty"
       body="Head to Discover and tap + on a poster, or open a title and add it here."
     >
-      <NuxtLink to="/" class="rounded-full bg-gold px-5 py-2 font-semibold text-ink">Find something to add</NuxtLink>
+      <NuxtLink to="/" class="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-panel">Find something to add</NuxtLink>
     </EmptyState>
 
-    <div v-else class="mt-10 space-y-12">
+    <div v-else class="mt-12 space-y-14">
       <section v-for="section in grouped" :key="section.key || 'unsorted'">
-        <div class="mb-4 flex items-end justify-between gap-3">
-          <h2 class="font-display text-3xl">{{ section.label }}</h2>
+        <div class="mb-5 flex items-end justify-between gap-3 border-b border-line pb-3">
+          <h2 class="font-display text-2xl font-medium tracking-tight">{{ section.label }}</h2>
           <p class="text-sm text-mist">{{ section.items.length }}</p>
         </div>
         <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
@@ -175,7 +175,7 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
             <div class="flex flex-wrap items-center gap-2 text-xs">
               <button
                 type="button"
-                class="text-mist hover:text-gold disabled:opacity-30"
+                class="text-mist hover:text-ink disabled:opacity-30"
                 :disabled="index === 0"
                 @click="moveItem(section.items, index, -1)"
               >
@@ -183,7 +183,7 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
               </button>
               <button
                 type="button"
-                class="text-mist hover:text-gold disabled:opacity-30"
+                class="text-mist hover:text-ink disabled:opacity-30"
                 :disabled="index === section.items.length - 1"
                 @click="moveItem(section.items, index, 1)"
               >
@@ -197,6 +197,6 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
     </div>
   </div>
   <EmptyState v-else-if="fetchError" title="List not found" body="It may have been deleted, or it belongs to another account.">
-    <NuxtLink to="/lists" class="text-gold hover:underline">Back to lists</NuxtLink>
+    <NuxtLink to="/lists" class="text-accent hover:underline">Back to lists</NuxtLink>
   </EmptyState>
 </template>

@@ -18,8 +18,8 @@ const options: { value: WatchStatus, label: string }[] = [
       type="button"
       class="rounded-full border px-3 py-1.5 text-sm transition"
       :class="model === option.value
-        ? 'border-gold bg-gold/15 text-gold'
-        : 'border-line text-mist hover:border-mist hover:text-paper'"
+        ? 'border-accent bg-accent/10 text-accent'
+        : 'border-line text-mist hover:border-ink/30 hover:text-ink'"
       @click="model = model === option.value ? '' : option.value"
     >
       {{ option.label }}
