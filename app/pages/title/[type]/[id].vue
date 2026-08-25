@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { LibraryItem, TitleDetails, WatchStatus } from '#shared/types'
+import type { LibraryItem, TitleCard, TitleDetails, WatchStatus } from '#shared/types'
 import { backdropUrl, posterUrl } from '#shared/utils/media'
 
 definePageMeta({ middleware: 'auth' })
@@ -18,13 +18,29 @@ const { data: library, refresh: refreshLibrary } = await useFetch<{ items: (Libr
   { query: { tmdbId: id, mediaType: type } },
 )
 
+const { data: recs } = await useFetch<{ results: TitleCard[] }>(
+  () => `/api/titles/${type.value}/${id.value}/recommendations`,
+  { default: () => ({ results: [] }) },
+)
+
+const { data: keysData, refresh: refreshKeys } = await useFetch<{ keys: string[] }>('/api/library/keys', {
+  default: () => ({ keys: [] }),
+})
+
 const memberships = computed(() => library.value?.items ?? [])
+const recommendations = computed(() => recs.value?.results ?? [])
+const libraryKeys = computed(() => new Set(keysData.value?.keys ?? []))
 const adding = ref(false)
+const addingRec = ref<TitleCard | null>(null)
 const savingId = ref('')
 
 useHead({ title: () => title.value?.title || 'Title' })
 
 const backdrop = computed(() => backdropUrl(title.value?.backdropPath))
+
+function isInLibrary(card: TitleCard) {
+  return libraryKeys.value.has(`${card.mediaType}:${card.tmdbId}`)
+}
 
 async function patchItem(item: LibraryItem & { listName: string }, patch: { userRating?: number | null, notes?: string, status?: WatchStatus | '' }) {
   savingId.value = item.id
@@ -42,9 +58,14 @@ async function patchItem(item: LibraryItem & { listName: string }, patch: { user
 
 async function removeFromList(itemId: string) {
   await $fetch(`/api/items/${itemId}`, { method: 'DELETE' })
-  await refreshLibrary()
+  await Promise.all([refreshLibrary(), refreshKeys()])
 }
 
+async function onAdded() {
+  await Promise.all([refreshLibrary(), refreshKeys()])
+  adding.value = false
+  addingRec.value = null
+}
 </script>
 
 <template>
@@ -134,13 +155,47 @@ async function removeFromList(itemId: string) {
       </div>
     </section>
 
+    <section v-if="recommendations.length" class="mt-12">
+      <div class="mb-4 flex items-end justify-between">
+        <div>
+          <p class="text-xs uppercase tracking-[0.25em] text-gold">Because you opened this</p>
+          <h2 class="font-display text-3xl">More like this</h2>
+        </div>
+        <p class="text-sm text-mist">{{ recommendations.length }} titles</p>
+      </div>
+      <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+        <PosterCard
+          v-for="card in recommendations"
+          :key="`${card.mediaType}-${card.tmdbId}`"
+          :tmdb-id="card.tmdbId"
+          :media-type="card.mediaType"
+          :title="card.title"
+          :year="card.year"
+          :poster-path="card.posterPath"
+          :imdb-rating="card.imdbRating"
+          :tmdb-rating="card.tmdbRating"
+          :genres="card.genres"
+          :in-library="isInLibrary(card)"
+          @add="addingRec = card"
+        />
+      </div>
+    </section>
+
     <AddToListModal
       v-if="adding"
       :tmdb-id="title.tmdbId"
       :media-type="title.mediaType"
       :title="title.title"
       @close="adding = false"
-      @added="() => refreshLibrary()"
+      @added="onAdded"
+    />
+    <AddToListModal
+      v-if="addingRec"
+      :tmdb-id="addingRec.tmdbId"
+      :media-type="addingRec.mediaType"
+      :title="addingRec.title"
+      @close="addingRec = null"
+      @added="onAdded"
     />
   </div>
   <EmptyState v-else-if="titleError" title="Title not found" body="TMDB did not return this movie or series.">

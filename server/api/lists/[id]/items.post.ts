@@ -60,6 +60,7 @@ export default defineEventHandler(async (event) => {
     status,
     added_at: new Date().toISOString(),
     position: String(position),
+    genres: JSON.stringify(title.genres ?? []),
   })
 
   return { item: toLibraryItem(item) }

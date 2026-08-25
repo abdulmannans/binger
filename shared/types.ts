@@ -39,6 +39,7 @@ export interface SheetItem {
   status: WatchStatus | ''
   added_at: string
   position: string
+  genres: string
 }
 
 export interface TitleCard {
@@ -51,6 +52,7 @@ export interface TitleCard {
   tmdbRating: number | null
   imdbRating: string | null
   imdbId: string | null
+  genres: string[]
 }
 
 export interface TitleDetails extends TitleCard {
@@ -93,4 +95,5 @@ export interface LibraryItem {
   status: WatchStatus | ''
   addedAt: string
   position: number
+  genres: string[]
 }

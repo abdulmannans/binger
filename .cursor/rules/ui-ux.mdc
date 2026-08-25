@@ -1,0 +1,25 @@
+---
+description: BingeWatcher UI/UX — cinema tokens, typography, anti-slop
+globs: app/**/*.{vue,css}
+alwaysApply: false
+---
+
+# UI/UX for BingeWatcher
+
+Read `DESIGN.md` for the source of truth. When editing Vue/CSS:
+
+## Must keep
+- Fonts: Bebas Neue (display), Outfit (body) — never Inter/Roboto/system as primary
+- Palette: ink / panel / gold / mist / paper / flare from `app/assets/css/main.css`
+- Brand-first Discover hero: product name + one headline + short support + search — not a dashboard
+
+## Patterns
+- Genre chips: horizontal scroll, gold active state
+- List detail: group by Watching / Want / Watched / Unsorted
+- Poster `+` becomes check when title is already in any list
+- Recommendations use the same `PosterCard` grid language
+
+## Avoid
+- Purple/indigo gradients, nested cards in hero, universe/franchise nav
+- Generic AI SaaS look; bounce easings; gray text on colored backgrounds
+- Surprising errors for “already added” — surface membership before submit

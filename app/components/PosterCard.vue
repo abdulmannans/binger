@@ -14,6 +14,8 @@ const props = defineProps<{
   status?: string
   compact?: boolean
   order?: number
+  genres?: string[]
+  inLibrary?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -24,6 +26,7 @@ const src = computed(() => posterUrl(props.posterPath, 'w500'))
 const href = computed(() => `/title/${props.mediaType}/${props.tmdbId}`)
 const rating = computed(() => props.imdbRating || (props.tmdbRating != null ? String(props.tmdbRating) : null))
 const ratingLabel = computed(() => props.imdbRating ? 'IMDb' : (props.tmdbRating != null ? 'TMDB' : null))
+const genreLine = computed(() => (props.genres ?? []).slice(0, 2).join(' · '))
 </script>
 
 <template>
@@ -46,6 +49,7 @@ const ratingLabel = computed(() => props.imdbRating ? 'IMDb' : (props.tmdbRating
             <span class="uppercase tracking-wide">{{ mediaType === 'tv' ? 'Series' : 'Movie' }}</span>
             <span v-if="year"> · {{ year }}</span>
           </p>
+          <p v-if="genreLine" class="mt-0.5 line-clamp-1 text-[11px] text-mist/80">{{ genreLine }}</p>
         </div>
         <div v-if="order" class="absolute left-2 top-2 z-10 rounded-md bg-gold px-1.5 py-0.5 text-[11px] font-semibold text-ink">
           {{ order }}
@@ -60,7 +64,16 @@ const ratingLabel = computed(() => props.imdbRating ? 'IMDb' : (props.tmdbRating
       </div>
     </NuxtLink>
     <button
-      v-if="!compact"
+      v-if="!compact && inLibrary"
+      type="button"
+      class="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-panel text-lg font-bold text-gold ring-1 ring-gold/60 shadow-lg"
+      title="Already in your lists"
+      disabled
+    >
+      ✓
+    </button>
+    <button
+      v-else-if="!compact"
       type="button"
       class="absolute bottom-3 right-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-gold text-lg font-bold text-ink shadow-lg transition hover:scale-105"
       title="Add to list"

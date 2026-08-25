@@ -45,18 +45,13 @@ async function createList() {
         <p class="text-xs uppercase tracking-[0.25em] text-gold">Collections</p>
         <h1 class="font-display text-6xl">Your lists</h1>
       </div>
-      <div class="flex flex-wrap gap-2">
-        <NuxtLink to="/universes" class="rounded-full border border-line px-5 py-2 font-semibold text-paper">
-          Universes
-        </NuxtLink>
-        <button
-          type="button"
-          class="rounded-full bg-gold px-5 py-2 font-semibold text-ink"
-          @click="showCreate = true"
-        >
-          New list
-        </button>
-      </div>
+      <button
+        type="button"
+        class="rounded-full bg-gold px-5 py-2 font-semibold text-ink"
+        @click="showCreate = true"
+      >
+        New list
+      </button>
     </div>
 
     <div v-if="pending && !lists.length" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -66,16 +61,11 @@ async function createList() {
     <EmptyState
       v-else-if="!lists.length"
       title="No lists yet"
-      body="Make a list for comfort rewatches, weekend binges, or install a curated universe."
+      body="Make a list for comfort rewatches, weekend binges, or whatever you are chasing next."
     >
-      <div class="flex flex-wrap gap-2">
-        <button type="button" class="rounded-full bg-gold px-5 py-2 font-semibold text-ink" @click="showCreate = true">
-          Create your first list
-        </button>
-        <NuxtLink to="/universes" class="rounded-full border border-line px-5 py-2 font-semibold text-paper">
-          Browse universes
-        </NuxtLink>
-      </div>
+      <button type="button" class="rounded-full bg-gold px-5 py-2 font-semibold text-ink" @click="showCreate = true">
+        Create your first list
+      </button>
     </EmptyState>
 
     <div v-else class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

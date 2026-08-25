@@ -10,5 +10,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event)
   const tab = parseTab(query.tab) ?? 'movie'
   const page = Math.max(1, Number(query.page) || 1)
-  return await discoverByTab(tab, page)
+  const genreRaw = Number(query.genreId)
+  const genreId = Number.isFinite(genreRaw) && genreRaw > 0 ? genreRaw : null
+  return await discoverByTab(tab, page, genreId)
 })

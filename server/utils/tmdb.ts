@@ -43,6 +43,7 @@ interface TmdbSearchResult {
   release_date?: string
   first_air_date?: string
   vote_average?: number
+  genre_ids?: number[]
 }
 
 interface TmdbPaged<T> {
@@ -70,7 +71,12 @@ function mediaTypeOf(value?: string): MediaType | null {
   return null
 }
 
-function toCard(item: TmdbSearchResult, mediaType: MediaType, imdb?: { id: string | null, rating: string | null }): TitleCard {
+function toCard(
+  item: TmdbSearchResult,
+  mediaType: MediaType,
+  imdb?: { id: string | null, rating: string | null },
+  genreNames?: string[],
+): TitleCard {
   return {
     tmdbId: item.id,
     mediaType,
@@ -81,6 +87,7 @@ function toCard(item: TmdbSearchResult, mediaType: MediaType, imdb?: { id: strin
     tmdbRating: item.vote_average ? Math.round(item.vote_average * 10) / 10 : null,
     imdbRating: imdb?.rating ?? null,
     imdbId: imdb?.id ?? null,
+    genres: genreNames ?? [],
   }
 }
 
@@ -104,19 +111,71 @@ export async function searchTitles(query: string): Promise<TitleCard[]> {
 
 export type DiscoverTab = 'movie' | 'tv' | 'anime'
 
-export async function discoverByTab(tab: DiscoverTab, page = 1): Promise<{ results: TitleCard[], page: number, totalPages: number }> {
+export async function listGenres(mediaType: 'movie' | 'tv'): Promise<{ id: number, name: string }[]> {
+  const data = await tmdb<{ genres: { id: number, name: string }[] }>(`/genre/${mediaType}/list`, {
+    language: 'en-US',
+  })
+  return data.genres ?? []
+}
+
+const genreNameCache = new Map<string, Map<number, string>>()
+
+async function genreMap(mediaType: MediaType): Promise<Map<number, string>> {
+  const key = mediaType === 'tv' ? 'tv' : 'movie'
+  const cached = genreNameCache.get(key)
+  if (cached) return cached
+  const genres = await listGenres(key)
+  const map = new Map(genres.map(genre => [genre.id, genre.name]))
+  genreNameCache.set(key, map)
+  return map
+}
+
+async function namesForGenreIds(mediaType: MediaType, ids?: number[]): Promise<string[]> {
+  if (!ids?.length) return []
+  const map = await genreMap(mediaType)
+  return ids.map(id => map.get(id)).filter((name): name is string => Boolean(name))
+}
+
+export async function discoverByTab(
+  tab: DiscoverTab,
+  page = 1,
+  genreId?: number | null,
+): Promise<{ results: TitleCard[], page: number, totalPages: number }> {
   const safePage = String(Math.max(1, page))
+  const genreFilter = genreId && Number.isFinite(genreId) && genreId > 0 ? String(genreId) : null
 
   if (tab === 'anime') {
-    const data = await tmdb<TmdbPaged<TmdbSearchResult> & { page?: number, total_pages?: number }>('/discover/tv', {
-      with_genres: '16',
+    const query: Record<string, string> = {
+      with_genres: genreFilter || '16',
       with_origin_country: 'JP',
       sort_by: 'popularity.desc',
       include_adult: 'false',
       language: 'en-US',
       page: safePage,
-    })
+    }
+    if (genreFilter && genreFilter !== '16') {
+      query.with_genres = `16,${genreFilter}`
+    }
+    const data = await tmdb<TmdbPaged<TmdbSearchResult> & { page?: number, total_pages?: number }>('/discover/tv', query)
     const entries = (data.results ?? []).map(item => ({ item, mediaType: 'tv' as const }))
+    return {
+      results: await enrichCards(entries),
+      page: data.page ?? page,
+      totalPages: Math.min(data.total_pages ?? 1, 20),
+    }
+  }
+
+  if (genreFilter) {
+    const path = tab === 'tv' ? '/discover/tv' : '/discover/movie'
+    const data = await tmdb<TmdbPaged<TmdbSearchResult> & { page?: number, total_pages?: number }>(path, {
+      with_genres: genreFilter,
+      sort_by: 'popularity.desc',
+      include_adult: 'false',
+      language: 'en-US',
+      page: safePage,
+    })
+    const mediaType: MediaType = tab
+    const entries = (data.results ?? []).map(item => ({ item, mediaType }))
     return {
       results: await enrichCards(entries),
       page: data.page ?? page,
@@ -138,80 +197,32 @@ export async function discoverByTab(tab: DiscoverTab, page = 1): Promise<{ resul
   }
 }
 
-interface TmdbCollectionPart extends TmdbSearchResult {
-  media_type?: string
-}
-
-interface TmdbCollection {
-  id: number
-  name: string
-  overview?: string
-  poster_path?: string | null
-  backdrop_path?: string | null
-  parts?: TmdbCollectionPart[]
-}
-
-interface TmdbCollectionResult {
-  id: number
-  name: string
-  overview?: string
-  poster_path?: string | null
-  backdrop_path?: string | null
-}
-
-export async function searchCollections(query: string) {
-  const data = await tmdb<TmdbPaged<TmdbCollectionResult>>('/search/collection', {
-    query,
-    include_adult: 'false',
-    language: 'en-US',
-  })
-  return (data.results ?? []).slice(0, 20).map(item => ({
-    id: item.id,
-    name: item.name,
-    overview: item.overview ?? '',
-    posterPath: item.poster_path ?? null,
-    backdropPath: item.backdrop_path ?? null,
-  }))
-}
-
-export async function getCollection(id: number) {
-  const data = await tmdb<TmdbCollection>(`/collection/${id}`, { language: 'en-US' })
-  const parts = (data.parts ?? [])
-    .slice()
-    .sort((a, b) => String(a.release_date || '').localeCompare(String(b.release_date || '')))
-  return {
-    id: data.id,
-    name: data.name,
-    overview: data.overview ?? '',
-    posterPath: data.poster_path ?? null,
-    backdropPath: data.backdrop_path ?? null,
-    parts: parts.map(part => toCard(part, 'movie')),
-  }
-}
-
 export async function getTitleCard(mediaType: MediaType, tmdbId: number): Promise<TitleCard> {
   const data = await tmdb<TmdbSearchResult>(`/${mediaType}/${tmdbId}`, { language: 'en-US' })
-  return toCard(data, mediaType)
+  const genres = await namesForGenreIds(mediaType, data.genre_ids)
+  return toCard(data, mediaType, undefined, genres)
 }
 
-export async function getTitleCards(entries: { tmdbId: number, mediaType: MediaType }[]): Promise<TitleCard[]> {
-  const cards: TitleCard[] = []
-  const batchSize = 12
-  for (let i = 0; i < entries.length; i += batchSize) {
-    const batch = entries.slice(i, i + batchSize)
-    const resolved = await Promise.all(batch.map(async (entry) => {
-      try {
-        return await getTitleCard(entry.mediaType, entry.tmdbId)
-      }
-      catch {
-        return null
-      }
-    }))
-    for (const card of resolved) {
-      if (card) cards.push(card)
+export async function getRecommendations(mediaType: MediaType, tmdbId: number): Promise<TitleCard[]> {
+  try {
+    const data = await tmdb<TmdbPaged<TmdbSearchResult>>(`/${mediaType}/${tmdbId}/recommendations`, {
+      language: 'en-US',
+      page: '1',
+    })
+    let results = data.results ?? []
+    if (!results.length) {
+      const similar = await tmdb<TmdbPaged<TmdbSearchResult>>(`/${mediaType}/${tmdbId}/similar`, {
+        language: 'en-US',
+        page: '1',
+      })
+      results = similar.results ?? []
     }
+    const entries = results.slice(0, 18).map(item => ({ item, mediaType }))
+    return enrichCards(entries)
   }
-  return cards
+  catch {
+    return []
+  }
 }
 
 export function parseMediaType(value: unknown): MediaType {
@@ -223,10 +234,16 @@ async function enrichCards(entries: { item: TmdbSearchResult, mediaType: MediaTy
   const slice = entries.slice(0, 12)
   const rest = entries.slice(12)
   const enriched = await Promise.all(slice.map(async ({ item, mediaType }) => {
-    const imdb = await getImdbForTmdb(mediaType, item.id)
-    return toCard(item, mediaType, imdb)
+    const [imdb, genres] = await Promise.all([
+      getImdbForTmdb(mediaType, item.id),
+      namesForGenreIds(mediaType, item.genre_ids),
+    ])
+    return toCard(item, mediaType, imdb, genres)
   }))
-  const plain = rest.map(({ item, mediaType }) => toCard(item, mediaType))
+  const plain = await Promise.all(rest.map(async ({ item, mediaType }) => {
+    const genres = await namesForGenreIds(mediaType, item.genre_ids)
+    return toCard(item, mediaType, undefined, genres)
+  }))
   return [...enriched, ...plain]
 }
 

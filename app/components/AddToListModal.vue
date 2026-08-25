@@ -13,6 +13,7 @@ const emit = defineEmits<{
 }>()
 
 const lists = ref<ListSummary[]>([])
+const membershipListIds = ref<Set<string>>(new Set())
 const loading = ref(true)
 const saving = ref(false)
 const creating = ref(false)
@@ -20,11 +21,19 @@ const error = ref('')
 const newName = ref('')
 const selectedId = ref('')
 
+const availableLists = computed(() => lists.value.filter(list => !membershipListIds.value.has(list.id)))
+
 onMounted(async () => {
   try {
-    const data = await $fetch<{ lists: ListSummary[] }>('/api/lists')
-    lists.value = data.lists
-    selectedId.value = data.lists[0]?.id ?? ''
+    const [listsData, membership] = await Promise.all([
+      $fetch<{ lists: ListSummary[] }>('/api/lists'),
+      $fetch<{ items: { listId: string }[] }>('/api/library/title', {
+        query: { tmdbId: props.tmdbId, mediaType: props.mediaType },
+      }),
+    ])
+    lists.value = listsData.lists
+    membershipListIds.value = new Set(membership.items.map(item => item.listId))
+    selectedId.value = availableLists.value[0]?.id ?? ''
   }
   catch (e) {
     error.value = apiError(e)
@@ -59,6 +68,10 @@ async function createList() {
 async function addToList() {
   if (!selectedId.value) {
     error.value = 'Create a list first'
+    return
+  }
+  if (membershipListIds.value.has(selectedId.value)) {
+    error.value = 'Already on this list'
     return
   }
   saving.value = true
@@ -98,13 +111,28 @@ async function addToList() {
         <label
           v-for="list in lists"
           :key="list.id"
-          class="flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2 transition"
-          :class="selectedId === list.id ? 'border-gold bg-gold/10' : 'border-line hover:border-mist'"
+          class="flex items-center gap-3 rounded-xl border px-3 py-2 transition"
+          :class="[
+            membershipListIds.has(list.id)
+              ? 'cursor-not-allowed border-line/60 opacity-60'
+              : selectedId === list.id
+                ? 'cursor-pointer border-gold bg-gold/10'
+                : 'cursor-pointer border-line hover:border-mist',
+          ]"
         >
-          <input v-model="selectedId" type="radio" :value="list.id" class="accent-gold">
+          <input
+            v-model="selectedId"
+            type="radio"
+            :value="list.id"
+            class="accent-gold"
+            :disabled="membershipListIds.has(list.id)"
+          >
           <span class="flex-1">
             <span class="block text-sm font-medium">{{ list.name }}</span>
-            <span class="text-xs text-mist">{{ list.itemCount }} title{{ list.itemCount === 1 ? '' : 's' }}</span>
+            <span class="text-xs text-mist">
+              <template v-if="membershipListIds.has(list.id)">Already added</template>
+              <template v-else>{{ list.itemCount }} title{{ list.itemCount === 1 ? '' : 's' }}</template>
+            </span>
           </span>
         </label>
       </div>
@@ -130,10 +158,10 @@ async function addToList() {
       <button
         type="button"
         class="w-full rounded-xl bg-gold py-2.5 text-sm font-semibold text-ink disabled:opacity-50"
-        :disabled="saving || loading"
+        :disabled="saving || loading || !selectedId || membershipListIds.has(selectedId)"
         @click="addToList"
       >
-        {{ saving ? 'Adding…' : 'Add to list' }}
+        {{ saving ? 'Adding…' : availableLists.length ? 'Add to list' : 'Already on all lists' }}
       </button>
     </div>
   </div>

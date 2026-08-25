@@ -1,6 +1,5 @@
 <script setup lang="ts">
-import type { ListDetail } from '#shared/types'
-import { STATUS_LABELS } from '#shared/utils/media'
+import type { LibraryItem, ListDetail, WatchStatus } from '#shared/types'
 
 definePageMeta({ middleware: 'auth' })
 
@@ -18,6 +17,23 @@ const description = ref('')
 const saving = ref(false)
 const deleting = ref(false)
 const error = ref('')
+
+const sections: { key: WatchStatus | '', label: string }[] = [
+  { key: 'watching', label: 'Watching' },
+  { key: 'want', label: 'Want to watch' },
+  { key: 'watched', label: 'Watched' },
+  { key: '', label: 'Unsorted' },
+]
+
+const grouped = computed(() => {
+  const items = list.value?.items ?? []
+  return sections
+    .map(section => ({
+      ...section,
+      items: items.filter(item => (item.status || '') === section.key),
+    }))
+    .filter(section => section.items.length > 0)
+})
 
 watch(list, (value) => {
   if (value && !editing.value) {
@@ -64,18 +80,34 @@ async function removeItem(itemId: string) {
   await refresh()
 }
 
-async function moveItem(index: number, direction: -1 | 1) {
+async function moveItem(sectionItems: LibraryItem[], index: number, direction: -1 | 1) {
   if (!list.value) return
   const next = index + direction
-  if (next < 0 || next >= list.value.items.length) return
-  const ids = list.value.items.map(item => item.id)
-  const moved = ids[index]
+  if (next < 0 || next >= sectionItems.length) return
+
+  const sectionIds = sectionItems.map(item => item.id)
+  const moved = sectionIds[index]
   if (!moved) return
-  ids.splice(index, 1)
-  ids.splice(next, 0, moved)
+  sectionIds.splice(index, 1)
+  sectionIds.splice(next, 0, moved)
+
+  const sectionSet = new Set(sectionIds)
+  const rebuilt: string[] = []
+  let sectionInserted = false
+  for (const item of list.value.items) {
+    if (!sectionSet.has(item.id)) {
+      rebuilt.push(item.id)
+      continue
+    }
+    if (!sectionInserted) {
+      rebuilt.push(...sectionIds)
+      sectionInserted = true
+    }
+  }
+
   await $fetch(`/api/lists/${id.value}/reorder`, {
     method: 'POST',
-    body: { ids },
+    body: { ids: rebuilt },
   })
   await refresh()
 }
@@ -99,7 +131,7 @@ async function moveItem(index: number, direction: -1 | 1) {
             <button type="button" class="rounded-xl px-4 py-2 text-sm text-mist" @click="editing = false">Cancel</button>
           </div>
         </form>
-        <p class="mt-3 text-sm text-mist">{{ list.items.length }} title{{ list.items.length === 1 ? '' : 's' }} · numbered watch order</p>
+        <p class="mt-3 text-sm text-mist">{{ list.items.length }} title{{ list.items.length === 1 ? '' : 's' }} · grouped by watch status</p>
       </div>
       <div class="flex gap-2">
         <button type="button" class="rounded-full border border-line px-4 py-2 text-sm" @click="editing = true">Rename</button>
@@ -109,9 +141,6 @@ async function moveItem(index: number, direction: -1 | 1) {
       </div>
     </div>
     <p v-if="error" class="mt-3 text-sm text-flare">{{ error }}</p>
-    <p v-if="route.query.missed" class="mt-3 text-sm text-mist">
-      Installed with a few unmatched titles: {{ route.query.missed }}
-    </p>
 
     <EmptyState
       v-if="!list.items.length"
@@ -122,43 +151,49 @@ async function moveItem(index: number, direction: -1 | 1) {
       <NuxtLink to="/" class="rounded-full bg-gold px-5 py-2 font-semibold text-ink">Find something to add</NuxtLink>
     </EmptyState>
 
-    <div v-else class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
-      <div v-for="(item, index) in list.items" :key="item.id" class="space-y-2">
-        <PosterCard
-          compact
-          :order="index + 1"
-          :tmdb-id="item.tmdbId"
-          :media-type="item.mediaType"
-          :title="item.title"
-          :year="item.year"
-          :poster-path="item.posterPath"
-          :imdb-rating="item.imdbRating"
-          :user-rating="item.userRating"
-        />
-        <p class="text-xs text-mist">
-          <span v-if="item.status">{{ STATUS_LABELS[item.status] }}</span>
-          <span v-if="item.notes" class="line-clamp-2">{{ item.notes }}</span>
-        </p>
-        <div class="flex flex-wrap items-center gap-2 text-xs">
-          <button
-            type="button"
-            class="text-mist hover:text-gold disabled:opacity-30"
-            :disabled="index === 0"
-            @click="moveItem(index, -1)"
-          >
-            Up
-          </button>
-          <button
-            type="button"
-            class="text-mist hover:text-gold disabled:opacity-30"
-            :disabled="index === list.items.length - 1"
-            @click="moveItem(index, 1)"
-          >
-            Down
-          </button>
-          <button type="button" class="text-flare hover:underline" @click="removeItem(item.id)">Remove</button>
+    <div v-else class="mt-10 space-y-12">
+      <section v-for="section in grouped" :key="section.key || 'unsorted'">
+        <div class="mb-4 flex items-end justify-between gap-3">
+          <h2 class="font-display text-3xl">{{ section.label }}</h2>
+          <p class="text-sm text-mist">{{ section.items.length }}</p>
         </div>
-      </div>
+        <div class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6">
+          <div v-for="(item, index) in section.items" :key="item.id" class="space-y-2">
+            <PosterCard
+              compact
+              :order="index + 1"
+              :tmdb-id="item.tmdbId"
+              :media-type="item.mediaType"
+              :title="item.title"
+              :year="item.year"
+              :poster-path="item.posterPath"
+              :imdb-rating="item.imdbRating"
+              :user-rating="item.userRating"
+              :genres="item.genres"
+            />
+            <p v-if="item.notes" class="line-clamp-2 text-xs text-mist">{{ item.notes }}</p>
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <button
+                type="button"
+                class="text-mist hover:text-gold disabled:opacity-30"
+                :disabled="index === 0"
+                @click="moveItem(section.items, index, -1)"
+              >
+                Up
+              </button>
+              <button
+                type="button"
+                class="text-mist hover:text-gold disabled:opacity-30"
+                :disabled="index === section.items.length - 1"
+                @click="moveItem(section.items, index, 1)"
+              >
+                Down
+              </button>
+              <button type="button" class="text-flare hover:underline" @click="removeItem(item.id)">Remove</button>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
   <EmptyState v-else-if="fetchError" title="List not found" body="It may have been deleted, or it belongs to another account.">

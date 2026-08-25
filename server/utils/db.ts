@@ -90,18 +90,38 @@ export async function ensureSchema() {
       notes TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT '',
       added_at TEXT NOT NULL,
-      position INTEGER NOT NULL DEFAULT 0
+      position INTEGER NOT NULL DEFAULT 0,
+      genres TEXT NOT NULL DEFAULT '[]'
     );
     CREATE INDEX IF NOT EXISTS idx_lists_user ON lists(user_id);
     CREATE INDEX IF NOT EXISTS idx_items_list ON items(list_id);
     CREATE INDEX IF NOT EXISTS idx_items_user ON items(user_id);
   `)
     await ensurePositionColumn(database)
+    await ensureGenresColumn(database)
   }
   catch (error) {
     dbFailure(error)
   }
   schemaReady = true
+}
+
+async function ensureGenresColumn(database: Client) {
+  try {
+    const info = await database.execute('PRAGMA table_info(items)')
+    const hasGenres = info.rows.some(row => String(row.name) === 'genres')
+    if (!hasGenres) {
+      await database.execute(`ALTER TABLE items ADD COLUMN genres TEXT NOT NULL DEFAULT '[]'`)
+    }
+  }
+  catch {
+    try {
+      await database.execute(`ALTER TABLE items ADD COLUMN genres TEXT NOT NULL DEFAULT '[]'`)
+    }
+    catch {
+      // already exists
+    }
+  }
 }
 
 async function ensurePositionColumn(database: Client) {
@@ -188,6 +208,7 @@ function toItem(row: Record<string, unknown>): SheetItem {
     status: (text(row.status) as WatchStatus | ''),
     added_at: text(row.added_at),
     position: text(row.position || '0'),
+    genres: text(row.genres || '[]') || '[]',
   }
 }
 
@@ -297,8 +318,8 @@ export async function createItem(item: SheetItem) {
   await db().execute({
     sql: `INSERT INTO items (
       id, list_id, user_id, tmdb_id, media_type, title, poster_path, year,
-      imdb_id, imdb_rating, user_rating, notes, status, added_at, position
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      imdb_id, imdb_rating, user_rating, notes, status, added_at, position, genres
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     args: [
       item.id,
       item.list_id,
@@ -315,6 +336,7 @@ export async function createItem(item: SheetItem) {
       item.status,
       item.added_at,
       item.position || '0',
+      item.genres || '[]',
     ],
   })
   return item
@@ -345,6 +367,16 @@ export function newId() {
 
 export function toLibraryItem(item: SheetItem) {
   const rating = item.user_rating.trim()
+  let genres: string[] = []
+  try {
+    const parsed = JSON.parse(item.genres || '[]')
+    if (Array.isArray(parsed)) {
+      genres = parsed.filter((entry): entry is string => typeof entry === 'string')
+    }
+  }
+  catch {
+    genres = []
+  }
   return {
     id: item.id,
     listId: item.list_id,
@@ -360,6 +392,7 @@ export function toLibraryItem(item: SheetItem) {
     status: (item.status || '') as WatchStatus | '',
     addedAt: item.added_at,
     position: Number(item.position) || 0,
+    genres,
   }
 }
 
