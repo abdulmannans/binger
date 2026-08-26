@@ -118,6 +118,21 @@ export async function listGenres(mediaType: 'movie' | 'tv'): Promise<{ id: numbe
   return data.genres ?? []
 }
 
+/** Lightweight posters for the public landing page — no OMDb enrichment. */
+export async function getLandingSpotlight(limit = 12): Promise<{ title: string, posterPath: string }[]> {
+  const data = await tmdb<TmdbPaged<TmdbSearchResult>>('/trending/movie/week', {
+    language: 'en-US',
+    page: '1',
+  })
+  return (data.results ?? [])
+    .filter((item): item is TmdbSearchResult & { poster_path: string } => Boolean(item.poster_path))
+    .slice(0, limit)
+    .map(item => ({
+      title: item.title || item.name || 'Untitled',
+      posterPath: item.poster_path,
+    }))
+}
+
 const genreNameCache = new Map<string, Map<number, string>>()
 
 async function genreMap(mediaType: MediaType): Promise<Map<number, string>> {

@@ -38,7 +38,14 @@ async function submit() {
 <template>
   <form class="w-full max-w-sm border-y border-line py-8 sm:border sm:rounded-xl sm:border-line sm:bg-panel sm:px-6 sm:py-8" @submit.prevent="submit">
     <h1 class="font-display text-3xl font-medium tracking-tight">Join the library</h1>
-    <p class="mt-2 text-sm text-mist">Invite code required. Passwords are stored as hashes.</p>
+    <p class="mt-2 text-sm text-mist">
+      Invite code required.
+      <a
+        href="mailto:samannan1999@gmail.com?subject=BingeWatcher%20invite%20request"
+        class="text-accent underline-offset-2 hover:underline"
+      >Email samannan1999@gmail.com</a>
+      to get one.
+    </p>
 
     <label class="mt-6 block text-sm text-mist">Display name</label>
     <input
@@ -76,6 +83,13 @@ async function submit() {
       required
       class="mt-1.5 w-full rounded-lg border border-line bg-canvas px-3 py-2.5 outline-none ring-accent/30 focus:ring-2"
     >
+    <p class="mt-1.5 text-xs text-mist">
+      Don't have a code?
+      <a
+        href="mailto:samannan1999@gmail.com?subject=BingeWatcher%20invite%20request"
+        class="text-accent underline-offset-2 hover:underline"
+      >Mail me</a>
+    </p>
 
     <p v-if="error" class="mt-4 text-sm text-flare">{{ error }}</p>
 
