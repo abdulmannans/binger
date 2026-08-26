@@ -4,7 +4,8 @@ import type { TitleCard } from '#shared/types'
 definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Discover' })
 
-type DiscoverTab = 'movie' | 'tv' | 'anime'
+type CatalogTab = 'movie' | 'tv' | 'anime'
+type DiscoverTab = CatalogTab | 'for-you'
 
 interface GenreOption {
   id: number
@@ -12,6 +13,7 @@ interface GenreOption {
 }
 
 const tabs: { id: DiscoverTab, label: string }[] = [
+  { id: 'for-you', label: 'For you' },
   { id: 'movie', label: 'Movies' },
   { id: 'tv', label: 'Series' },
   { id: 'anime', label: 'Anime' },
@@ -26,7 +28,7 @@ const genreId = ref<number | null>(null)
 const libraryKeys = ref<Set<string>>(new Set())
 const loading = ref(false)
 const catalogLoading = ref(true)
-const forYouLoading = ref(true)
+const forYouLoading = ref(false)
 const loadingMore = ref(false)
 const error = ref('')
 const adding = ref<TitleCard | null>(null)
@@ -34,6 +36,10 @@ const tab = ref<DiscoverTab>('movie')
 const page = ref(1)
 const totalPages = ref(1)
 let timer: ReturnType<typeof setTimeout> | null = null
+
+function isCatalogTab(value: DiscoverTab): value is CatalogTab {
+  return value === 'movie' || value === 'tv' || value === 'anime'
+}
 
 function libraryKey(mediaType: string, tmdbId: number) {
   return `${mediaType}:${tmdbId}`
@@ -54,7 +60,7 @@ async function loadLibraryKeys() {
 }
 
 async function loadGenres(nextTab: DiscoverTab) {
-  if (nextTab === 'anime') {
+  if (!isCatalogTab(nextTab) || nextTab === 'anime') {
     genres.value = []
     return
   }
@@ -71,12 +77,14 @@ async function loadGenres(nextTab: DiscoverTab) {
 
 async function loadForYou() {
   forYouLoading.value = true
+  error.value = ''
   try {
     const data = await $fetch<{ results: TitleCard[] }>('/api/recommendations/for-you')
     forYou.value = data.results
   }
-  catch {
+  catch (e) {
     forYou.value = []
+    error.value = apiError(e)
   }
   finally {
     forYouLoading.value = false
@@ -94,14 +102,9 @@ if (discoverError.value && !error.value) {
   error.value = apiError(discoverError.value)
 }
 
-// Keys + genres can load with SSR; for-you is deferred off the critical path
 await Promise.all([loadLibraryKeys(), loadGenres('movie')])
 
-onMounted(() => {
-  loadForYou()
-})
-
-async function loadCatalog(nextTab: DiscoverTab, nextPage = 1, append = false) {
+async function loadCatalog(nextTab: CatalogTab, nextPage = 1, append = false) {
   if (!append) {
     catalogLoading.value = true
     catalog.value = []
@@ -137,11 +140,19 @@ async function setTab(next: DiscoverTab) {
   tab.value = next
   page.value = 1
   genreId.value = null
+  error.value = ''
   await loadGenres(next)
+  if (next === 'for-you') {
+    catalog.value = []
+    catalogLoading.value = false
+    await loadForYou()
+    return
+  }
   await loadCatalog(next, 1)
 }
 
 function setGenre(id: number | null) {
+  if (!isCatalogTab(tab.value)) return
   genreId.value = id
   page.value = 1
   loadCatalog(tab.value, 1)
@@ -173,9 +184,15 @@ watch(query, (value) => {
 })
 
 const showingSearch = computed(() => query.value.trim().length >= 2)
-const grid = computed(() => showingSearch.value ? results.value : catalog.value)
+const showingForYou = computed(() => tab.value === 'for-you' && !showingSearch.value)
+const grid = computed(() => {
+  if (showingSearch.value) return results.value
+  if (tab.value === 'for-you') return forYou.value
+  return catalog.value
+})
 const heading = computed(() => {
   if (showingSearch.value) return 'Results'
+  if (tab.value === 'for-you') return 'For you'
   if (genreId.value) {
     const name = genres.value.find(g => g.id === genreId.value)?.name
     if (name) return name
@@ -184,11 +201,16 @@ const heading = computed(() => {
   if (tab.value === 'tv') return 'Trending series'
   return 'Trending movies'
 })
+const gridLoading = computed(() => {
+  if (showingSearch.value) return false
+  if (tab.value === 'for-you') return forYouLoading.value
+  return catalogLoading.value
+})
 
 function onAdded(title: TitleCard) {
   libraryKeys.value = new Set([...libraryKeys.value, libraryKey(title.mediaType, title.tmdbId)])
   adding.value = null
-  loadForYou()
+  if (tab.value === 'for-you') loadForYou()
 }
 </script>
 
@@ -224,7 +246,7 @@ function onAdded(title: TitleCard) {
         </button>
       </div>
 
-      <div v-if="genres.length && !showingSearch" class="mt-4 flex gap-2 overflow-x-auto pb-1">
+      <div v-if="genres.length && !showingSearch && !showingForYou" class="mt-4 flex gap-2 overflow-x-auto pb-1">
         <button
           type="button"
           class="shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium transition"
@@ -247,52 +269,24 @@ function onAdded(title: TitleCard) {
       <p v-if="error" class="mt-3 text-sm text-flare">{{ error }}</p>
     </section>
 
-    <section v-if="!showingSearch" class="mb-14">
-      <div class="mb-5 flex items-end justify-between">
-        <div>
-          <p class="text-sm text-mist">Picks</p>
-          <h2 class="font-display text-2xl font-medium tracking-tight">For you</h2>
-        </div>
-        <p class="text-sm text-mist">{{ forYou.length }}</p>
-      </div>
-      <div v-if="forYouLoading" class="bw-shelf">
-        <div
-          v-for="n in 8"
-          :key="n"
-          class="bw-tile animate-pulse rounded-lg bg-panel-2"
-          style="height: 210px"
-        />
-      </div>
-      <EmptyState
-        v-else-if="!forYou.length"
-        title="No recommendations yet"
-        body="Add a few titles and mark them Want or Watched — we will pull similar picks from TMDB."
-      />
-      <div v-else class="bw-shelf">
-        <PosterCard
-          v-for="title in forYou"
-          :key="`fy-${title.mediaType}-${title.tmdbId}`"
-          :tmdb-id="title.tmdbId"
-          :media-type="title.mediaType"
-          :title="title.title"
-          :year="title.year"
-          :poster-path="title.posterPath"
-          :imdb-rating="title.imdbRating"
-          :tmdb-rating="title.tmdbRating"
-          :genres="title.genres"
-          :in-library="isInLibrary(title)"
-          @add="adding = title"
-        />
-      </div>
-    </section>
-
     <section>
-      <div class="mb-5 flex items-end justify-between">
+      <div class="mb-5 flex items-end justify-between gap-4">
         <h2 class="font-display text-2xl font-medium tracking-tight">{{ heading }}</h2>
-        <p class="text-sm text-mist">{{ grid.length }}</p>
+        <div class="flex items-center gap-3">
+          <button
+            v-if="showingForYou"
+            type="button"
+            class="rounded-lg border border-line px-3 py-1.5 text-sm text-mist transition hover:border-ink hover:text-ink disabled:opacity-50"
+            :disabled="forYouLoading"
+            @click="loadForYou"
+          >
+            {{ forYouLoading ? 'Refreshing…' : 'Refresh' }}
+          </button>
+          <p class="text-sm text-mist">{{ grid.length }}</p>
+        </div>
       </div>
 
-      <div v-if="catalogLoading && !showingSearch" class="bw-shelf">
+      <div v-if="gridLoading" class="bw-shelf">
         <div
           v-for="n in 14"
           :key="n"
@@ -305,6 +299,12 @@ function onAdded(title: TitleCard) {
         v-else-if="showingSearch && !loading && !grid.length"
         title="No matches"
         body="Try another title, or switch between the movie name and the series name."
+      />
+
+      <EmptyState
+        v-else-if="showingForYou && !grid.length"
+        title="No recommendations yet"
+        body="Add a few titles and mark them Want or Watched — we will pull similar picks from TMDB."
       />
 
       <div v-else class="bw-shelf">
@@ -324,7 +324,10 @@ function onAdded(title: TitleCard) {
         />
       </div>
 
-      <div v-if="!showingSearch && page < totalPages" class="mt-10 flex justify-center">
+      <div
+        v-if="isCatalogTab(tab) && !showingSearch && page < totalPages"
+        class="mt-10 flex justify-center"
+      >
         <button
           type="button"
           class="rounded-lg border border-line px-5 py-2 text-sm text-mist transition hover:border-ink hover:text-ink"
