@@ -15,7 +15,7 @@ npm install
 npm run dev
 ```
 
-Open http://localhost:3000, register with the invite code, then search and build lists.
+Open http://localhost:3000 for the product landing, register with the invite code, then browse Discover at `/discover` and build lists.
 
 If you later host on Netlify, do **not** use the SQLite file. Create a free [Turso](https://turso.tech) database and set these in **Site configuration → Environment variables**, then redeploy:
 

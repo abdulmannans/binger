@@ -6,7 +6,7 @@ Light minimal personal library. Keep this document in sync when changing visual 
 
 - Audience: people tracking movies and series they want / are / have watched
 - Voice: quiet, direct, letterboxd-lite — personal library, not a cinema marquee
-- Surfaces: Discover, Lists, Title detail, Auth
+- Surfaces: Landing (`/`), Discover (`/discover`), Lists, Title detail, Auth
 
 ## Brand & type
 

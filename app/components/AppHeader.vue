@@ -3,7 +3,7 @@ const { user, logout } = useAuth()
 const route = useRoute()
 
 const links = [
-  { to: '/', label: 'Discover' },
+  { to: '/discover', label: 'Discover' },
   { to: '/lists', label: 'Lists' },
 ]
 </script>
@@ -11,7 +11,7 @@ const links = [
 <template>
   <header class="sticky top-0 z-40 border-b border-line/80 bg-canvas/85 backdrop-blur-md transition">
     <div class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3.5 sm:px-6">
-      <NuxtLink to="/" class="font-display text-xl font-semibold tracking-tight text-ink">
+      <NuxtLink to="/discover" class="font-display text-xl font-semibold tracking-tight text-ink">
         BingeWatcher
       </NuxtLink>
 

@@ -148,7 +148,7 @@ async function moveItem(sectionItems: LibraryItem[], index: number, direction: -
       title="This list is empty"
       body="Head to Discover and tap + on a poster, or open a title and add it here."
     >
-      <NuxtLink to="/" class="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-panel">Find something to add</NuxtLink>
+      <NuxtLink to="/discover" class="rounded-lg bg-ink px-4 py-2 text-sm font-medium text-panel">Find something to add</NuxtLink>
     </EmptyState>
 
     <div v-else class="mt-12 space-y-14">

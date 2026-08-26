@@ -21,7 +21,7 @@ export default defineNuxtConfig({
       titleTemplate: '%s · BingeWatcher',
       htmlAttrs: { lang: 'en' },
       meta: [
-        { name: 'description', content: 'Your personal movie and series library' },
+        { name: 'description', content: 'A personal movie and series library — discover titles, build lists, rate what you watch, and keep notes in one quiet place.' },
         { name: 'theme-color', content: '#f5f5f3' },
       ],
       link: [

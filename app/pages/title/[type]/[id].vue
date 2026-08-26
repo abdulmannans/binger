@@ -227,6 +227,6 @@ async function onAdded() {
     />
   </div>
   <EmptyState v-else-if="titleError" title="Title not found" body="TMDB did not return this movie or series.">
-    <NuxtLink to="/" class="text-accent hover:underline">Back to discover</NuxtLink>
+    <NuxtLink to="/discover" class="text-accent hover:underline">Back to discover</NuxtLink>
   </EmptyState>
 </template>

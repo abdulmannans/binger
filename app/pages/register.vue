@@ -24,7 +24,7 @@ async function submit() {
       displayName: displayName.value,
       inviteCode: inviteCode.value,
     })
-    await navigateTo('/')
+    await navigateTo('/discover')
   }
   catch (e) {
     error.value = apiError(e)
