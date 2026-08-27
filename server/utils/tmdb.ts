@@ -218,21 +218,26 @@ export async function getTitleCard(mediaType: MediaType, tmdbId: number): Promis
   return toCard(data, mediaType, undefined, genres)
 }
 
-export async function getRecommendations(mediaType: MediaType, tmdbId: number): Promise<TitleCard[]> {
+export async function getRecommendations(
+  mediaType: MediaType,
+  tmdbId: number,
+  page = 1,
+): Promise<TitleCard[]> {
   try {
+    const safePage = String(Math.max(1, Math.min(page, 5)))
     const data = await tmdb<TmdbPaged<TmdbSearchResult>>(`/${mediaType}/${tmdbId}/recommendations`, {
       language: 'en-US',
-      page: '1',
+      page: safePage,
     })
     let results = data.results ?? []
     if (!results.length) {
       const similar = await tmdb<TmdbPaged<TmdbSearchResult>>(`/${mediaType}/${tmdbId}/similar`, {
         language: 'en-US',
-        page: '1',
+        page: safePage,
       })
       results = similar.results ?? []
     }
-    const entries = results.slice(0, 18).map(item => ({ item, mediaType }))
+    const entries = results.slice(0, 20).map(item => ({ item, mediaType }))
     return enrichCards(entries)
   }
   catch {

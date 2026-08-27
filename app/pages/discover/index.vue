@@ -79,7 +79,9 @@ async function loadForYou() {
   forYouLoading.value = true
   error.value = ''
   try {
-    const data = await $fetch<{ results: TitleCard[] }>('/api/recommendations/for-you')
+    const data = await $fetch<{ results: TitleCard[] }>('/api/recommendations/for-you', {
+      query: { _t: Date.now() },
+    })
     forYou.value = data.results
   }
   catch (e) {
